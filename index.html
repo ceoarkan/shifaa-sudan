@@ -1,4 +1,1123 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة شفاء السودان | Shifaa Sudan</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  *{box-sizing:border-box}
+  .spinner{border:3px solid #f3f3f3;border-top:3px solid #1e3a8a;border-radius:50%;width:18px;height:18px;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .btn-disabled{opacity:.6;pointer-events:none}
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:10px;color:#fff;font-weight:700;z-index:9999;display:none;min-width:280px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+  #toast.success{background:#16a34a}
+  #toast.error{background:#dc2626}
+  #toast.info{background:#1d4ed8}
+  #toast.warn{background:#d97706}
+  .badge-red{background:#fee2e2;color:#991b1b;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+  .badge-orange{background:#ffedd5;color:#9a3412;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+  .badge-green{background:#dcfce7;color:#166534;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+  .badge-blue{background:#dbeafe;color:#1e40af;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+  .badge-gray{background:#f3f4f6;color:#374151;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+  .notif-dot{width:8px;height:8px;background:#dc2626;border-radius:50%;display:inline-block}
+  .card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:1.5rem;margin-bottom:1rem}
+  .section-title{font-size:1.1rem;font-weight:700;color:#1e3a8a;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:2px solid #dbeafe}
+  input,select,textarea{transition:border .2s;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+  .tab-btn{padding:.5rem 1rem;border-radius:8px;font-weight:600;cursor:pointer;transition:all .2s}
+  .tab-btn.active{background:#1e3a8a;color:#fff}
+  .tab-btn:not(.active){background:#f1f5f9;color:#374151}
+  .tab-btn:not(.active):hover{background:#dbeafe}
+  @media(max-width:640px){.grid-cols-stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════════════════ -->
+<nav class="bg-blue-900 text-white shadow-xl sticky top-0 z-50">
+  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+      <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+        <span class="text-blue-900 font-extrabold text-lg">ش</span>
+      </div>
+      <div>
+        <div class="font-extrabold text-lg leading-tight">شفاء السودان</div>
+        <div class="text-blue-200 text-xs">Shifaa Sudan</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="notif-btn" class="hidden relative p-2 rounded-lg hover:bg-blue-800" onclick="toggleNotifications()">
+        🔔 <span id="notif-count" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
+      </button>
+      <span id="user-name-nav" class="hidden text-sm text-blue-200"></span>
+      <button id="login-btn-nav" onclick="showLogin()" class="bg-white text-blue-900 px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-50">تسجيل الدخول</button>
+      <button id="logout-btn" onclick="doLogout()" class="hidden bg-red-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-700">خروج</button>
+    </div>
+  </div>
+  <!-- Notifications Dropdown -->
+  <div id="notif-panel" class="hidden absolute left-4 top-16 w-80 bg-white text-gray-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto"></div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGES CONTAINER
+═══════════════════════════════════════════════════════ -->
+<div id="app" class="container mx-auto px-4 py-6">
+
+  <!-- ── LANDING ─────────────────────────────────────── -->
+  <div id="page-landing">
+    <div class="text-center py-12">
+      <h1 class="text-5xl font-extrabold text-blue-900 mb-3">شفاء السودان</h1>
+      <p class="text-xl text-gray-600 mb-2">منصة طبية تطوعية تربط المرضى بالأطباء في كل مكان</p>
+      <p class="text-gray-500 mb-8">رعاية طبية مجانية — مستدامة — موثوقة</p>
+      <div class="flex flex-wrap gap-3 justify-center mb-12">
+        <button onclick="showLogin()" class="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800">تسجيل الدخول</button>
+        <button onclick="showRegister('volunteer')" class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700">تسجيل متطوع ميداني</button>
+        <button onclick="showRegister('doctor')" class="bg-teal-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-teal-700">تسجيل طبيب</button>
+      </div>
+      <!-- Public Stats -->
+      <div id="public-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="card text-center"><div class="text-3xl font-extrabold text-blue-900" id="st-doctors">-</div><div class="text-gray-500 text-sm mt-1">طبيب متطوع</div></div>
+        <div class="card text-center"><div class="text-3xl font-extrabold text-green-600" id="st-volunteers">-</div><div class="text-gray-500 text-sm mt-1">متطوع ميداني</div></div>
+        <div class="card text-center"><div class="text-3xl font-extrabold text-orange-500" id="st-closed">-</div><div class="text-gray-500 text-sm mt-1">حالة تم علاجها</div></div>
+        <div class="card text-center"><div class="text-3xl font-extrabold text-purple-600" id="st-active">-</div><div class="text-gray-500 text-sm mt-1">حالة نشطة</div></div>
+      </div>
+      <div class="card max-w-2xl mx-auto text-right">
+        <h3 class="section-title">كيف تعمل المنصة؟</h3>
+        <div class="space-y-3 text-gray-700">
+          <div class="flex gap-3 items-start"><span class="text-2xl">📍</span><p><b>المتطوع الميداني</b> يوثّق الحالات الطبية من الميدان ويرسلها بالوصف والمنطقة.</p></div>
+          <div class="flex gap-3 items-start"><span class="text-2xl">🔍</span><p><b>المشرف الطبي</b> يصنّف الحالة (باردة/متوسطة/مستعجلة) ويُسندها للطبيب المناسب.</p></div>
+          <div class="flex gap-3 items-start"><span class="text-2xl">👨‍⚕️</span><p><b>الطبيب</b> يراجع الحالة ويُقدّم التشخيص والوصفة مع حماية خصوصية المريض.</p></div>
+          <div class="flex gap-3 items-start"><span class="text-2xl">🔺</span><p><b>التصعيد التلقائي</b> من الطبيب العام → الأخصائي → الاستشاري عند الحاجة.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOGIN ────────────────────────────────────────── -->
+  <div id="page-login" class="hidden max-w-md mx-auto">
+    <div class="card">
+      <h2 class="text-2xl font-bold text-center text-blue-900 mb-6">تسجيل الدخول</h2>
+      <input id="login-id" type="text" placeholder="البريد الإلكتروني أو اسم المستخدم"
+        class="w-full p-3 mb-4 border border-gray-300 rounded-lg" autocomplete="username">
+      <input id="login-pw" type="password" placeholder="كلمة المرور"
+        class="w-full p-3 mb-5 border border-gray-300 rounded-lg" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+      <button id="login-submit" onclick="doLogin()" class="w-full bg-blue-900 text-white p-3 rounded-lg font-bold hover:bg-blue-800">دخول</button>
+      <button onclick="showPage('landing')" class="w-full mt-3 text-gray-500 hover:text-gray-700">← رجوع</button>
+    </div>
+  </div>
+
+  <!-- ── REGISTER ──────────────────────────────────────── -->
+  <div id="page-register" class="hidden max-w-2xl mx-auto">
+    <div class="card">
+      <h2 id="reg-title" class="text-2xl font-bold text-center text-blue-900 mb-6">تسجيل جديد</h2>
+
+      <!-- Common Fields -->
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <input id="reg-name" type="text" placeholder="الاسم الكامل *" maxlength="100" class="p-3 border border-gray-300 rounded-lg w-full">
+        <input id="reg-email" type="email" placeholder="البريد الإلكتروني *" class="p-3 border border-gray-300 rounded-lg w-full">
+      </div>
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <input id="reg-phone" type="tel" placeholder="رقم واتساب *" maxlength="20" class="p-3 border border-gray-300 rounded-lg w-full">
+        <input id="reg-location" type="text" placeholder="الولاية / المدينة *" maxlength="100" class="p-3 border border-gray-300 rounded-lg w-full">
+      </div>
+
+      <!-- Doctor Only Fields -->
+      <div id="reg-doctor-section" class="hidden">
+        <div class="bg-blue-50 rounded-lg p-4 mb-4">
+          <p class="text-blue-800 font-semibold mb-3">بيانات التسجيل الطبي</p>
+          <div class="grid md:grid-cols-2 gap-4 mb-4">
+            <select id="reg-specialty" class="p-3 border border-gray-300 rounded-lg w-full">
+              <option value="">التخصص *</option>
+              <option value="باطنية">باطنية</option>
+              <option value="أطفال">أطفال</option>
+              <option value="قلب">قلب وأوعية</option>
+              <option value="جراحة عامة">جراحة عامة</option>
+              <option value="نساء وتوليد">نساء وتوليد</option>
+              <option value="عظام">عظام وكسور</option>
+              <option value="عيون">عيون</option>
+              <option value="أعصاب">مخ وأعصاب</option>
+              <option value="جلدية">جلدية</option>
+              <option value="نفسية">نفسية</option>
+              <option value="طوارئ">طب طوارئ</option>
+              <option value="عمومي">طبيب عمومي</option>
+            </select>
+            <select id="reg-doctor-level" class="p-3 border border-gray-300 rounded-lg w-full">
+              <option value="general">طبيب عمومي</option>
+              <option value="specialist">طبيب أخصائي</option>
+              <option value="consultant">طبيب استشاري</option>
+            </select>
+          </div>
+          <input id="reg-license" type="text" placeholder="رقم تسجيل المهن الطبية *" maxlength="50"
+            class="w-full p-3 mb-4 border border-gray-300 rounded-lg">
+          <div class="mb-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">صورة الشهادة / رخصة المهن الطبية (PDF - max 5MB) *</label>
+            <input id="reg-cert" type="file" accept="application/pdf" class="w-full p-2 border border-gray-300 rounded-lg">
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">الجنسية</label>
+            <select id="reg-nationality" class="w-full p-3 border border-gray-300 rounded-lg" onchange="toggleRecommendation()">
+              <option value="sd">سوداني</option>
+              <option value="other">غير سوداني</option>
+            </select>
+          </div>
+          <div id="reg-recommendation-section" class="hidden mt-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">رمز توصية الطبيب السوداني (يُرسل لك من الطبيب المرجّع)</label>
+            <input id="reg-recommendation" type="text" placeholder="كود التوصية" class="w-full p-3 border border-gray-300 rounded-lg">
+          </div>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-sm text-yellow-800">
+          ⚠️ سيتم مراجعة بياناتك من قِبل الأدمن وإشعارك بعد التفعيل. لا يمكن تسجيل الدخول قبل التفعيل.
+        </div>
+      </div>
+
+      <!-- Volunteer Notice -->
+      <div id="reg-volunteer-section" class="hidden">
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-sm text-green-800">
+          <p class="font-bold mb-1">📋 ملاحظة للمتطوع:</p>
+          <p>سيتم مراجعة طلبك من قِبل الأدمن. عند القبول، سيُرسَل لك اسم المستخدم وكلمة المرور عبر واتساب على الرقم الذي أدخلته.</p>
+        </div>
+      </div>
+
+      <button id="reg-submit" onclick="doRegister()" class="w-full bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700">إرسال طلب التسجيل</button>
+      <button onclick="showPage('landing')" class="w-full mt-3 text-gray-500 hover:text-gray-700">← رجوع</button>
+    </div>
+  </div>
+
+  <!-- ── DASHBOARD ─────────────────────────────────────── -->
+  <div id="page-dashboard" class="hidden">
+    <div id="dashboard-content"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SB_URL = 'https://qhjszxgjdaxzenirfbtc.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoanN6eGdqZGF4emVuaXJmYnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NDU2MTgsImV4cCI6MjA5NTIyMTYxOH0.5L1lO0IBN6hvRVBXzvErlmcQPVJ3jsoVpr7zlHlmcpg';
+const sb = createClient(SB_URL, SB_KEY);
+
+// ── State ────────────────────────────────────────────────
+let ME = null; // current profile
+
+// ── Utilities ────────────────────────────────────────────
+function s(v) {
+  if (v === null || v === undefined) return '';
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(v)));
+  return d.innerHTML;
+}
+function clip(str, n) { if (!str) return ''; return s(str).substring(0, n); }
+
+window.toast = function(msg, type = 'info', ms = 4000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = type; el.style.display = 'block';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => { el.style.display = 'none'; }, ms);
+};
+
+function loading(id, on) {
+  const b = document.getElementById(id); if (!b) return;
+  if (on) { b.dataset.o = b.innerHTML; b.innerHTML += '<span class="spinner"></span>'; b.classList.add('btn-disabled'); }
+  else { b.innerHTML = b.dataset.o || b.innerHTML; b.classList.remove('btn-disabled'); }
+}
+
+function urgencyBadge(u) {
+  if (u === 'مستعجل' || u === 'عاجلة') return `<span class="badge-red">${s(u)}</span>`;
+  if (u === 'متوسط'  || u === 'متوسطة') return `<span class="badge-orange">${s(u)}</span>`;
+  return `<span class="badge-green">${s(u)}</span>`;
+}
+function statusBadge(st) {
+  const map = { 'جديدة':'badge-blue','قيد الترياج':'badge-orange','قيد المعالجة':'badge-orange','مغلقة':'badge-green','محوّلة':'badge-gray','تصعيد':'badge-red' };
+  return `<span class="${map[st]||'badge-gray'}">${s(st)}</span>`;
+}
+function levelLabel(lv) {
+  return lv === 'specialist' ? 'أخصائي' : lv === 'consultant' ? 'استشاري' : 'عمومي';
+}
+
+// ── Page Router ──────────────────────────────────────────
+window.showPage = function(name) {
+  ['landing','login','register','dashboard'].forEach(p =>
+    document.getElementById('page-' + p).classList.add('hidden'));
+  document.getElementById('page-' + name).classList.remove('hidden');
+};
+
+window.goHome = function() {
+  if (ME) renderDashboard(ME);
+  else { showPage('landing'); loadPublicStats(); }
+};
+
+window.showLogin = function() { showPage('login'); };
+
+window.showRegister = function(type) {
+  window._regType = type;
+  showPage('register');
+  document.getElementById('reg-title').textContent =
+    type === 'doctor' ? 'تسجيل طبيب متطوع' : 'تسجيل متطوع ميداني';
+  document.getElementById('reg-doctor-section').classList.toggle('hidden', type !== 'doctor');
+  document.getElementById('reg-volunteer-section').classList.toggle('hidden', type !== 'volunteer');
+};
+
+window.toggleRecommendation = function() {
+  const v = document.getElementById('reg-nationality').value;
+  document.getElementById('reg-recommendation-section').classList.toggle('hidden', v !== 'other');
+};
+
+// ── Validation ───────────────────────────────────────────
+function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function validPhone(p) { return /^[\d\+\-\s]{7,20}$/.test(p); }
+
+// ── REGISTER ─────────────────────────────────────────────
+window.doRegister = async function() {
+  const name     = document.getElementById('reg-name').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const phone    = document.getElementById('reg-phone').value.trim();
+  const location = document.getElementById('reg-location').value.trim();
+  const type     = window._regType;
+
+  if (name.length < 3)      return toast('الاسم قصير جداً', 'error');
+  if (!validEmail(email))   return toast('البريد الإلكتروني غير صحيح', 'error');
+  if (!validPhone(phone))   return toast('رقم الواتساب غير صحيح', 'error');
+  if (!location)            return toast('أدخل الولاية/المدينة', 'error');
+
+  if (type === 'doctor') {
+    if (!document.getElementById('reg-specialty').value) return toast('اختر التخصص', 'error');
+    if (!document.getElementById('reg-license').value.trim()) return toast('أدخل رقم التسجيل الطبي', 'error');
+    const cert = document.getElementById('reg-cert').files[0];
+    if (!cert) return toast('ارفع صورة الشهادة/الرخصة', 'error');
+    if (cert.type !== 'application/pdf') return toast('يُقبل PDF فقط', 'error');
+    if (cert.size > 5 * 1024 * 1024) return toast('حجم الملف أكبر من 5MB', 'error');
+  }
+
+  loading('reg-submit', true);
+  try {
+    // إنشاء حساب Auth بكلمة مرور مؤقتة — الأدمن سيُعيّن كلمة مرور للمتطوعين
+    const tempPw = Math.random().toString(36).slice(2, 10) + 'A1!';
+    const { data: auth, error: authErr } = await sb.auth.signUp({ email, password: tempPw });
+    if (authErr) { console.error(authErr); return toast('فشل إنشاء الحساب: ' + (authErr.message.includes('already') ? 'البريد مستخدم مسبقاً' : 'حاول لاحقاً'), 'error'); }
+    if (!auth?.user) return toast('خطأ غير متوقع', 'error');
+
+    const profile = {
+      id: auth.user.id, email, full_name: name,
+      whatsapp_phone: phone, location,
+      role: type === 'doctor' ? 'doctor' : 'field_volunteer',
+      is_active: false
+    };
+
+    if (type === 'doctor') {
+      profile.specialty    = document.getElementById('reg-specialty').value;
+      profile.doctor_level = document.getElementById('reg-doctor-level').value;
+      profile.medical_license_number = document.getElementById('reg-license').value.trim().substring(0, 50);
+      profile.nationality  = document.getElementById('reg-nationality').value;
+      const cert = document.getElementById('reg-cert').files[0];
+      const { data: up } = await sb.storage.from('certificates').upload(`${auth.user.id}/cert.pdf`, cert, { upsert: true });
+      if (up) profile.certificate_url = up.path;
+    }
+
+    const { error: pErr } = await sb.from('profiles').insert(profile);
+    if (pErr) { console.error(pErr); return toast('فشل حفظ البيانات. حاول مرة أخرى.', 'error'); }
+
+    await sb.auth.signOut();
+    toast('تم إرسال طلبك! ستُراسَل عبر واتساب عند التفعيل.', 'success', 7000);
+    showPage('landing');
+  } finally { loading('reg-submit', false); }
+};
+
+// ── LOGIN ─────────────────────────────────────────────────
+window.doLogin = async function() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  if (!id || !pw) return toast('أدخل البريد/اسم المستخدم وكلمة المرور', 'error');
+
+  loading('login-submit', true);
+  try {
+    let email = id;
+
+    // إذا ليس بريد → بحث باسم المستخدم
+    if (!validEmail(id)) {
+      const { data: p } = await sb.from('profiles').select('email').eq('username', id).single();
+      if (!p) return toast('اسم المستخدم غير موجود', 'error');
+      email = p.email;
+    }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) { console.error(error); return toast('بيانات الدخول غير صحيحة', 'error'); }
+
+    const { data: profile, error: pErr } = await sb.from('profiles').select('*').eq('id', data.user.id).single();
+    if (pErr || !profile) { await sb.auth.signOut(); return toast('لم يُعثر على الملف الشخصي', 'error'); }
+    if (!profile.is_active) { await sb.auth.signOut(); return toast('حسابك غير مفعّل بعد. انتظر إشعار واتساب.', 'info'); }
+
+    ME = profile;
+    document.getElementById('login-btn-nav').classList.add('hidden');
+    document.getElementById('logout-btn').classList.remove('hidden');
+    document.getElementById('notif-btn').classList.remove('hidden');
+    document.getElementById('user-name-nav').textContent = profile.full_name;
+    document.getElementById('user-name-nav').classList.remove('hidden');
+    document.getElementById('login-id').value = '';
+    document.getElementById('login-pw').value = '';
+    renderDashboard(ME);
+    loadNotifications();
+  } finally { loading('login-submit', false); }
+};
+
+window.doLogout = async function() {
+  await sb.auth.signOut(); ME = null;
+  document.getElementById('login-btn-nav').classList.remove('hidden');
+  document.getElementById('logout-btn').classList.add('hidden');
+  document.getElementById('notif-btn').classList.add('hidden');
+  document.getElementById('user-name-nav').classList.add('hidden');
+  document.getElementById('notif-panel').classList.add('hidden');
+  showPage('landing'); loadPublicStats();
+};
+
+// ── SESSION RESTORE ───────────────────────────────────────
+sb.auth.getSession().then(async ({ data: { session } }) => {
+  if (!session) { showPage('landing'); loadPublicStats(); return; }
+  const { data: p } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if (p && p.is_active) {
+    ME = p;
+    document.getElementById('login-btn-nav').classList.add('hidden');
+    document.getElementById('logout-btn').classList.remove('hidden');
+    document.getElementById('notif-btn').classList.remove('hidden');
+    document.getElementById('user-name-nav').textContent = p.full_name;
+    document.getElementById('user-name-nav').classList.remove('hidden');
+    renderDashboard(ME); loadNotifications();
+  } else { showPage('landing'); loadPublicStats(); }
+});
+
+// ── PUBLIC STATS ─────────────────────────────────────────
+async function loadPublicStats() {
+  try {
+    const [r1,r2,r3,r4] = await Promise.all([
+      sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','doctor').eq('is_active',true),
+      sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','field_volunteer').eq('is_active',true),
+      sb.from('cases').select('*',{count:'exact',head:true}).eq('status','مغلقة'),
+      sb.from('cases').select('*',{count:'exact',head:true}).neq('status','مغلقة')
+    ]);
+    document.getElementById('st-doctors').textContent    = r1.count ?? 0;
+    document.getElementById('st-volunteers').textContent = r2.count ?? 0;
+    document.getElementById('st-closed').textContent     = r3.count ?? 0;
+    document.getElementById('st-active').textContent     = r4.count ?? 0;
+  } catch(e) { console.error(e); }
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────
+async function loadNotifications() {
+  if (!ME) return;
+  const { data } = await sb.from('notifications').select('*').eq('profile_id', ME.id).eq('is_read', false).order('created_at',{ascending:false}).limit(20);
+  const cnt = data?.length || 0;
+  const el  = document.getElementById('notif-count');
+  if (cnt > 0) { el.textContent = cnt; el.classList.remove('hidden'); }
+  else el.classList.add('hidden');
+  window._notifs = data || [];
+}
+
+window.toggleNotifications = async function() {
+  const panel = document.getElementById('notif-panel');
+  panel.classList.toggle('hidden');
+  if (panel.classList.contains('hidden')) return;
+  const notifs = window._notifs || [];
+  if (notifs.length === 0) { panel.innerHTML = '<div class="p-4 text-gray-500 text-center">لا إشعارات جديدة</div>'; return; }
+  panel.innerHTML = notifs.map(n => `
+    <div class="p-3 border-b hover:bg-gray-50 cursor-pointer" onclick="markRead('${s(n.id)}', '${s(n.case_id)}')">
+      <div class="flex gap-2 items-start">
+        <span class="notif-dot mt-1.5 flex-shrink-0"></span>
+        <div>
+          <p class="text-sm text-gray-800">${s(n.message)}</p>
+          <p class="text-xs text-gray-400 mt-1">${new Date(n.created_at).toLocaleDateString('ar')}</p>
+        </div>
+      </div>
+    </div>`).join('') + `<div class="p-2 text-center"><button onclick="markAllRead()" class="text-blue-600 text-sm hover:underline">تعليم الكل كمقروء</button></div>`;
+};
+
+window.markRead = async function(id, caseId) {
+  await sb.from('notifications').update({is_read:true}).eq('id', id);
+  document.getElementById('notif-panel').classList.add('hidden');
+  if (caseId && caseId !== 'null') openCase(caseId);
+  loadNotifications();
+};
+
+window.markAllRead = async function() {
+  if (!ME) return;
+  await sb.from('notifications').update({is_read:true}).eq('profile_id', ME.id);
+  document.getElementById('notif-panel').classList.add('hidden');
+  loadNotifications();
+};
+
+// ── DASHBOARD ROUTER ─────────────────────────────────────
+function renderDashboard(p) {
+  showPage('dashboard');
+  const dc = document.getElementById('dashboard-content');
+  if (p.role === 'admin')              renderAdmin(dc);
+  else if (p.role === 'medical_supervisor') renderSupervisor(dc);
+  else if (p.role === 'field_volunteer')    renderVolunteer(dc);
+  else if (p.role === 'doctor')             renderDoctor(dc);
+  else dc.innerHTML = '<p class="text-red-500">دور غير معروف</p>';
+}
+window.renderDashboard = renderDashboard;
+
+// ══════════════════════════════════════════════════════════
+//  ADMIN DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function renderAdmin(dc) {
+  dc.innerHTML = `
+    <h2 class="text-2xl font-bold text-blue-900 mb-4">لوحة تحكم الأدمن — ${s(ME.full_name)}</h2>
+    <div class="flex flex-wrap gap-2 mb-6">
+      ${['pending','doctors','volunteers','cases','internal-stats'].map((t,i)=>
+        `<button class="tab-btn ${i===0?'active':''}" data-tab="${t}" onclick="adminTab('${t}')">${['طلبات التفعيل','الأطباء','المتطوعون','الحالات','الإحصاء الداخلي'][i]}</button>`
+      ).join('')}
+    </div>
+    <div id="admin-tab-content"></div>`;
+  adminTab('pending');
+}
+
+window.adminTab = async function(tab) {
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  const c = document.getElementById('admin-tab-content');
+  c.innerHTML = '<div class="text-gray-400 text-center py-8">جاري التحميل...</div>';
+
+  if (tab === 'pending') {
+    const { data } = await sb.from('profiles').select('*').eq('is_active', false).order('created_at').limit(100);
+    if (!data?.length) { c.innerHTML = '<p class="text-gray-500 text-center py-8">لا توجد طلبات جديدة</p>'; return; }
+    c.innerHTML = data.map(p => `
+      <div class="card">
+        <div class="flex flex-wrap justify-between gap-3">
+          <div>
+            <p class="font-bold text-lg">${s(p.full_name)}</p>
+            <p class="text-sm text-gray-500">${s(p.email)} | واتساب: <a href="https://wa.me/${s(p.whatsapp_phone||p.phone)}" target="_blank" class="text-green-600 hover:underline">${s(p.whatsapp_phone||p.phone)}</a></p>
+            <p class="text-sm text-gray-600 mt-1">${s(p.location)} | ${p.role === 'doctor' ? `طبيب ${levelLabel(p.doctor_level)} - ${s(p.specialty)} | رخصة: ${s(p.medical_license_number)}` : 'متطوع ميداني'}</p>
+            ${p.certificate_url ? `<a href="${SB_URL}/storage/v1/object/public/certificates/${s(p.certificate_url)}" target="_blank" class="text-blue-600 text-sm hover:underline">📄 عرض الشهادة</a>` : ''}
+          </div>
+          <div class="flex flex-col gap-2">
+            <button onclick="adminActivate('${s(p.id)}','${s(p.role)}','${s(p.full_name)}')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700">✓ تفعيل</button>
+            <button onclick="adminReject('${s(p.id)}')" class="bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-200">✗ رفض</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  else if (tab === 'doctors') {
+    const { data } = await sb.from('profiles').select('*').eq('role','doctor').eq('is_active',true).order('full_name');
+    c.innerHTML = `
+      <div class="mb-4 flex gap-2">
+        <input id="doc-search" placeholder="بحث..." class="p-2 border rounded-lg flex-1" oninput="filterTable('doc-table','doc-search')">
+      </div>
+      <div id="doc-table" class="space-y-3">${(data||[]).map(d=>`
+        <div class="card flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <p class="font-bold">د. ${s(d.full_name)} <span class="badge-blue text-xs">${levelLabel(d.doctor_level)}</span></p>
+            <p class="text-sm text-gray-500">${s(d.specialty)} | ${s(d.location)} | <a href="https://wa.me/${s(d.whatsapp_phone||d.phone)}" target="_blank" class="text-green-600">واتساب</a></p>
+            <p class="text-xs text-gray-400">${d.nationality === 'other' ? '🌍 غير سوداني' : '🇸🇩 سوداني'}</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="promoteDoctor('${s(d.id)}','${s(d.doctor_level)}')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200">ترقية</button>
+            <button onclick="assignRole('${s(d.id)}','medical_supervisor')" class="bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg text-sm hover:bg-purple-200">تعيين مشرفاً</button>
+          </div>
+        </div>`).join('')}</div>`;
+  }
+
+  else if (tab === 'volunteers') {
+    const { data } = await sb.from('profiles').select('*').eq('role','field_volunteer').eq('is_active',true).order('full_name');
+    c.innerHTML = `
+      <div class="mb-4"><input id="vol-search" placeholder="بحث..." class="p-2 border rounded-lg w-full" oninput="filterTable('vol-table','vol-search')"></div>
+      <div id="vol-table" class="space-y-3">${(data||[]).map(v=>`
+        <div class="card flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <p class="font-bold">${s(v.full_name)} ${v.username ? `<span class="badge-gray">@${s(v.username)}</span>`:''}</p>
+            <p class="text-sm text-gray-500">${s(v.location)} | <a href="https://wa.me/${s(v.whatsapp_phone||v.phone)}" target="_blank" class="text-green-600">واتساب</a></p>
+          </div>
+          <button onclick="setVolunteerCredentials('${s(v.id)}','${s(v.full_name)}','${s(v.whatsapp_phone||v.phone)}')" class="bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-lg text-sm hover:bg-indigo-200">إعداد بيانات الدخول</button>
+        </div>`).join('')}</div>`;
+  }
+
+  else if (tab === 'cases') {
+    const { data } = await sb.from('cases').select('*, profiles!cases_volunteer_id_fkey(full_name)').order('created_at',{ascending:false}).limit(100);
+    c.innerHTML = `<div class="space-y-3">${(data||[]).map(cs=>`
+      <div class="card">
+        <div class="flex flex-wrap justify-between gap-2">
+          <div>
+            <p class="font-bold">${s(cs.patient_name||'مجهول')} <span class="text-gray-400 text-sm">| ${s(cs.patient_region)}</span> ${statusBadge(cs.status)} ${urgencyBadge(cs.triage_level||cs.urgency)}</p>
+            <p class="text-sm text-gray-500">${clip(cs.description,80)}...</p>
+            <p class="text-xs text-gray-400">متطوع: ${s(cs.profiles?.full_name)} | ${new Date(cs.created_at).toLocaleDateString('ar')}</p>
+          </div>
+          <button onclick="adminOpenCase('${s(cs.id)}')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200">عرض</button>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+
+  else if (tab === 'internal-stats') {
+    renderInternalStats(c);
+  }
+}
+
+window.adminActivate = async function(uid, role, name) {
+  if (role === 'field_volunteer') {
+    // طلب اسم مستخدم للمتطوع
+    const uname = prompt(`أدخل اسم المستخدم للمتطوع "${name}":`);
+    if (!uname) return;
+    const pw    = prompt('أدخل كلمة المرور المؤقتة (ستُرسل للمتطوع عبر واتساب):');
+    if (!pw) return;
+    // تحديث profile
+    const { error } = await sb.from('profiles').update({ is_active: true, username: uname.trim() }).eq('id', uid);
+    if (error) return toast('فشل التفعيل: ' + error.message, 'error');
+    // تحديث كلمة المرور عبر Admin API (يتطلب service_role — هنا نعرض فقط)
+    toast(`تم التفعيل! أرسل للمتطوع: اسم المستخدم: ${uname} | كلمة المرور: ${pw}`, 'success', 8000);
+  } else {
+    const { error } = await sb.from('profiles').update({ is_active: true }).eq('id', uid);
+    if (error) return toast('فشل التفعيل', 'error');
+    toast('تم تفعيل الحساب بنجاح', 'success');
+  }
+  adminTab('pending');
+};
+
+window.adminReject = async function(uid) {
+  if (!confirm('تأكيد رفض الطلب؟')) return;
+  await sb.from('profiles').delete().eq('id', uid);
+  toast('تم رفض الطلب', 'warn');
+  adminTab('pending');
+};
+
+window.promoteDoctor = async function(uid, current) {
+  const next = current === 'general' ? 'specialist' : current === 'specialist' ? 'consultant' : null;
+  if (!next) return toast('الطبيب بالفعل في أعلى مستوى (استشاري)', 'info');
+  if (!confirm(`ترقية الطبيب إلى ${levelLabel(next)}؟`)) return;
+  await sb.from('profiles').update({ doctor_level: next }).eq('id', uid);
+  toast('تمت الترقية', 'success');
+  adminTab('doctors');
+};
+
+window.assignRole = async function(uid, role) {
+  if (!confirm(`تعيين هذا الطبيب مشرفاً طبياً؟`)) return;
+  await sb.from('profiles').update({ role }).eq('id', uid);
+  toast('تم التعيين مشرفاً طبياً', 'success');
+  adminTab('doctors');
+};
+
+window.setVolunteerCredentials = function(uid, name, phone) {
+  const uname = prompt(`اسم المستخدم للمتطوع "${name}":`);
+  if (!uname) return;
+  const msg = `مرحباً ${name}،\nبيانات دخولك لمنصة شفاء السودان:\nاسم المستخدم: ${uname}\n\nيرجى تغيير كلمة المرور بعد أول دخول.`;
+  window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+  sb.from('profiles').update({ username: uname.trim() }).eq('id', uid).then(() => {
+    toast('تم حفظ اسم المستخدم', 'success');
+  });
+};
+
+window.adminOpenCase = async function(cid) {
+  const { data: c } = await sb.from('cases').select('*, profiles!cases_volunteer_id_fkey(full_name,whatsapp_phone)').eq('id', cid).single();
+  if (!c) return toast('لم تُوجد الحالة', 'error');
+  const { data: recs } = await sb.from('case_records').select('*, profiles(full_name)').eq('case_id', cid).order('created_at');
+  const { data: trans } = await sb.from('case_transfers').select('*, from_doc:profiles!case_transfers_from_doctor_id_fkey(full_name), to_doc:profiles!case_transfers_to_doctor_id_fkey(full_name)').eq('case_id', cid);
+
+  const dc = document.getElementById('admin-tab-content');
+  dc.innerHTML = `
+    <button onclick="adminTab('cases')" class="mb-4 text-blue-600 hover:underline">← رجوع للحالات</button>
+    <div class="card">
+      <div class="flex flex-wrap justify-between gap-3 mb-4">
+        <div>
+          <h3 class="text-xl font-bold">${s(c.patient_name)} | ${s(c.patient_region)}</h3>
+          <p class="text-sm text-gray-500">العمر: ${s(c.patient_age)} | الجنس: ${s(c.patient_gender)} | ${statusBadge(c.status)} ${urgencyBadge(c.triage_level||c.urgency)}</p>
+          <p class="text-sm text-gray-500">متطوع: ${s(c.profiles?.full_name)} | <a href="https://wa.me/${s(c.profiles?.whatsapp_phone)}" target="_blank" class="text-green-600">واتساب</a></p>
+        </div>
+      </div>
+      <p class="text-gray-700 whitespace-pre-wrap mb-4"><b>الوصف:</b><br>${s(c.description)}</p>
+      ${c.diagnosis    ? `<p class="text-gray-700"><b>التشخيص:</b> ${s(c.diagnosis)}</p>` : ''}
+      ${c.prescription ? `<p class="text-gray-700"><b>الوصفة:</b> ${s(c.prescription)}</p>` : ''}
+      ${c.follow_up_date ? `<p class="text-orange-600 font-medium">📅 موعد المتابعة: ${s(c.follow_up_date)}</p>` : ''}
+    </div>
+    <div class="card">
+      <div class="section-title">سجل الحالة الطبي</div>
+      ${(recs||[]).map(r=>`<div class="border-r-4 border-blue-300 pr-3 mb-3"><p class="text-sm font-medium text-gray-700">${s(r.note)}</p><p class="text-xs text-gray-400">${s(r.profiles?.full_name)} — ${new Date(r.created_at).toLocaleString('ar')}</p></div>`).join('') || '<p class="text-gray-400">لا سجلات</p>'}
+    </div>
+    ${trans?.length ? `<div class="card"><div class="section-title">التحويلات</div>${trans.map(t=>`<p class="text-sm text-gray-600 mb-1">من: ${s(t.from_doc?.full_name||'—')} ← إلى: ${s(t.to_doc?.full_name)} | ${s(t.reason)}</p>`).join('')}</div>` : ''}`;
+};
+
+async function renderInternalStats(c) {
+  // أكثر الأطباء نشاطاً
+  const { data: topDocs } = await sb.from('cases').select('assigned_doctor_id, profiles!cases_assigned_doctor_id_fkey(full_name,specialty,location,doctor_level)').eq('status','مغلقة').not('assigned_doctor_id','is',null);
+  const { data: regions } = await sb.from('cases').select('patient_region').not('patient_region','is',null);
+
+  // تجميع
+  const docCount = {};
+  (topDocs||[]).forEach(r => {
+    const did = r.assigned_doctor_id;
+    if (!docCount[did]) docCount[did] = { count:0, doc: r.profiles };
+    docCount[did].count++;
+  });
+  const sortedDocs = Object.values(docCount).sort((a,b)=>b.count-a.count).slice(0,10);
+
+  const regCount = {};
+  (regions||[]).forEach(r => { const rg = r.patient_region||'غير محدد'; regCount[rg] = (regCount[rg]||0)+1; });
+  const sortedReg = Object.entries(regCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  c.innerHTML = `
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="card">
+        <div class="section-title">🏆 أكثر الأطباء مشاركة</div>
+        ${sortedDocs.map((d,i)=>`
+          <div class="flex justify-between items-center mb-2 p-2 ${i===0?'bg-yellow-50':''} rounded">
+            <div>
+              <span class="font-bold">${i+1}. د. ${s(d.doc?.full_name)}</span>
+              <span class="text-xs text-gray-500 mr-2">${s(d.doc?.specialty)} | ${levelLabel(d.doc?.doctor_level)}</span>
+            </div>
+            <span class="badge-blue">${d.count} حالة</span>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="section-title">📍 أكثر المناطق تقديماً للحالات</div>
+        ${sortedReg.map((r,i)=>`
+          <div class="flex justify-between items-center mb-2 p-2 ${i===0?'bg-green-50':''} rounded">
+            <span class="font-medium">${i+1}. ${s(r[0])}</span>
+            <span class="badge-green">${r[1]} حالة</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUPERVISOR DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function renderSupervisor(dc) {
+  dc.innerHTML = `
+    <h2 class="text-2xl font-bold text-blue-900 mb-4">لوحة المشرف الطبي — ${s(ME.full_name)}</h2>
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button class="tab-btn active" data-tab="triage" onclick="supTab('triage')">قائمة الترياج</button>
+      <button class="tab-btn" data-tab="inprogress" onclick="supTab('inprogress')">قيد المعالجة</button>
+    </div>
+    <div id="sup-tab-content"></div>`;
+  supTab('triage');
+}
+
+window.supTab = async function(tab) {
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  const c = document.getElementById('sup-tab-content');
+  c.innerHTML = '<div class="text-gray-400 text-center py-8">جاري التحميل...</div>';
+
+  const { data: doctors } = await sb.from('profiles').select('id,full_name,specialty,doctor_level,location').eq('role','doctor').eq('is_active',true).order('doctor_level');
+
+  const filterStatus = tab === 'triage' ? ['جديدة','قيد الترياج'] : ['قيد المعالجة'];
+  let query = sb.from('cases').select('*').order('created_at',{ascending:true});
+  if (tab==='triage') query = query.in('status',filterStatus);
+  else query = query.eq('status','قيد المعالجة');
+  const { data: cases } = await query.limit(100);
+
+  if (!cases?.length) { c.innerHTML = `<p class="text-gray-500 text-center py-8">لا توجد حالات</p>`; return; }
+
+  c.innerHTML = cases.map(cs => {
+    const docOpts = (doctors||[]).map(d=>
+      `<option value="${s(d.id)}">[${levelLabel(d.doctor_level)}] د. ${s(d.full_name)} — ${s(d.specialty)} (${s(d.location)})</option>`
+    ).join('');
+    return `
+    <div class="card" id="case-card-${s(cs.id)}">
+      <div class="flex flex-wrap justify-between gap-2 mb-3">
+        <div>
+          <p class="font-bold">${s(cs.patient_region)} ${statusBadge(cs.status)}</p>
+          <p class="text-sm text-gray-600">${clip(cs.description,120)}...</p>
+        </div>
+      </div>
+      ${tab==='triage' ? `
+      <div class="bg-blue-50 rounded-lg p-3">
+        <p class="text-sm font-semibold text-blue-800 mb-2">تصنيف الحالة وإسنادها:</p>
+        <div class="grid md:grid-cols-3 gap-2 mb-3">
+          <select id="triage-lv-${s(cs.id)}" class="p-2 border rounded-lg">
+            <option value="">مستوى الخطورة</option>
+            <option value="بارد">🟢 بارد</option>
+            <option value="متوسط">🟡 متوسط</option>
+            <option value="مستعجل">🔴 مستعجل</option>
+          </select>
+          <select id="triage-doc-${s(cs.id)}" class="p-2 border rounded-lg col-span-2">
+            <option value="">اختر طبيباً</option>${docOpts}
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="assignTriage('${s(cs.id)}')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700">إسناد</button>
+          <button onclick="aiTriage('${s(cs.id)}','${clip(cs.description,300)}')" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-200">🤖 ترياج AI</button>
+        </div>
+      </div>` : `
+      <div class="flex gap-2 mt-2">
+        <button onclick="addFollowUp('${s(cs.id)}')" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg text-sm hover:bg-orange-200">📅 موعد متابعة</button>
+        <button onclick="openSupervisorCase('${s(cs.id)}')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200">عرض السجل</button>
+      </div>`}
+    </div>`;
+  }).join('');
+};
+
+window.assignTriage = async function(cid) {
+  const lv  = document.getElementById(`triage-lv-${cid}`).value;
+  const did = document.getElementById(`triage-doc-${cid}`).value;
+  if (!lv)  return toast('اختر مستوى الخطورة', 'error');
+  if (!did) return toast('اختر طبيباً', 'error');
+  const { error } = await sb.from('cases').update({
+    triage_level: lv, assigned_doctor_id: did,
+    supervisor_id: ME.id, status: 'قيد المعالجة'
+  }).eq('id', cid);
+  if (error) return toast('فشل الإسناد: ' + error.message, 'error');
+  // إشعار الطبيب
+  await sb.from('notifications').insert({ profile_id: did, case_id: cid, message: `تم إسناد حالة جديدة لك بمستوى: ${lv}`, notify_type: lv==='مستعجل'?'urgent':'info' });
+  await sb.from('case_records').insert({ case_id: cid, note: `[ترياج] مستوى: ${lv} — أُسندت للطبيب`, record_type:'escalation', created_by: ME.id });
+  toast('تم الإسناد بنجاح', 'success');
+  document.getElementById(`case-card-${cid}`)?.remove();
+};
+
+window.aiTriage = async function(cid, desc) {
+  // محاكاة ترياج الذكاء الاصطناعي (keyword-based — يمكن استبداله بـ API)
+  const urgent_kw = ['نزيف','فقدان الوعي','صعوبة التنفس','سكتة','احتشاء','حوادث','غرق','حروق','حمل'];
+  const mild_kw   = ['زكام','رشح','سعال خفيف','صداع بسيط','إرهاق'];
+  const lower = desc.toLowerCase();
+  let level = 'متوسط';
+  if (urgent_kw.some(k => desc.includes(k))) level = 'مستعجل';
+  else if (mild_kw.some(k => desc.includes(k))) level = 'بارد';
+  document.getElementById(`triage-lv-${cid}`).value = level;
+  toast(`🤖 AI اقترح: ${level} — راجع واختر الطبيب ثم اضغط إسناد`, 'info', 5000);
+  await sb.from('cases').update({ ai_triage: true }).eq('id', cid);
+};
+
+window.addFollowUp = async function(cid) {
+  const dt   = prompt('أدخل تاريخ المتابعة (YYYY-MM-DD):');
+  if (!dt) return;
+  const note = prompt('ملاحظة للمتطوع الميداني:') || '';
+  const { data: cs } = await sb.from('cases').select('volunteer_id').eq('id', cid).single();
+  await sb.from('cases').update({ follow_up_date: dt, follow_up_note: note }).eq('id', cid);
+  if (cs?.volunteer_id) {
+    await sb.from('notifications').insert({ profile_id: cs.volunteer_id, case_id: cid, message: `تذكير: حالتك لديها موعد متابعة بتاريخ ${dt}. ${note}`, notify_type:'followup' });
+  }
+  toast('تم تحديد موعد المتابعة وإرسال إشعار للمتطوع', 'success');
+};
+
+window.openSupervisorCase = async function(cid) {
+  await openCaseFull(cid, 'supervisor');
+};
+
+// ══════════════════════════════════════════════════════════
+//  VOLUNTEER DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function renderVolunteer(dc) {
+  dc.innerHTML = `
+    <h2 class="text-2xl font-bold text-blue-900 mb-4">لوحة المتطوع — ${s(ME.full_name)}</h2>
+    <button onclick="showNewCaseForm()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 mb-6">+ إضافة حالة جديدة</button>
+    <div class="section-title mt-2">حالاتي</div>
+    <div id="vol-cases-list" class="text-gray-400">جاري التحميل...</div>`;
+  await loadVolunteerCases();
+}
+
+async function loadVolunteerCases() {
+  const { data } = await sb.from('cases').select('*').eq('volunteer_id', ME.id).order('created_at',{ascending:false});
+  const el = document.getElementById('vol-cases-list');
+  if (!data?.length) { el.innerHTML = '<p class="text-gray-400 text-center py-6">لا توجد حالات بعد</p>'; return; }
+  el.innerHTML = data.map(c=>`
+    <div class="card">
+      <div class="flex flex-wrap justify-between gap-2">
+        <div>
+          <p class="font-bold">${s(c.patient_name||'حالة')} ${statusBadge(c.status)} ${c.triage_level?urgencyBadge(c.triage_level):''}</p>
+          <p class="text-sm text-gray-500">${s(c.patient_region)} | ${clip(c.description,80)}...</p>
+          ${c.follow_up_date ? `<p class="text-orange-600 text-sm font-medium mt-1">📅 موعد متابعة: ${s(c.follow_up_date)} — ${s(c.follow_up_note)}</p>` : ''}
+          ${c.diagnosis ? `<p class="text-green-700 text-sm mt-1">✓ تم التشخيص</p>` : ''}
+        </div>
+        <span class="text-xs text-gray-400">${new Date(c.created_at).toLocaleDateString('ar')}</span>
+      </div>
+    </div>`).join('');
+}
+
+window.showNewCaseForm = function() {
+  const dc = document.getElementById('dashboard-content');
+  dc.innerHTML = `
+    <button onclick="renderDashboard(ME)" class="mb-4 text-blue-600 hover:underline">← رجوع</button>
+    <h2 class="text-2xl font-bold text-blue-900 mb-4">تسجيل حالة جديدة</h2>
+    <div class="card max-w-2xl">
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <input id="c-name" placeholder="اسم المريض *" maxlength="100" class="p-3 border border-gray-300 rounded-lg">
+        <input id="c-age" type="number" placeholder="العمر *" min="0" max="120" class="p-3 border border-gray-300 rounded-lg">
+      </div>
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <select id="c-gender" class="p-3 border border-gray-300 rounded-lg">
+          <option value="">الجنس *</option><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option>
+        </select>
+        <input id="c-region" placeholder="المنطقة / الولاية *" maxlength="100" class="p-3 border border-gray-300 rounded-lg" value="${s(ME.location)}">
+      </div>
+      <textarea id="c-desc" placeholder="وصف الحالة والأعراض بالتفصيل *" maxlength="3000" class="w-full p-3 mb-4 border border-gray-300 rounded-lg h-36"></textarea>
+      <select id="c-urgency" class="w-full p-3 mb-4 border border-gray-300 rounded-lg">
+        <option value="عادية">عادية</option><option value="متوسطة">متوسطة</option><option value="عاجلة">عاجلة</option>
+      </select>
+      <label class="block text-sm font-medium text-gray-700 mb-1">صور الحالة (JPG/PNG - max 5MB لكل صورة)</label>
+      <input id="c-images" type="file" multiple accept="image/jpeg,image/png,image/webp" class="w-full p-2 border border-gray-300 rounded-lg mb-4">
+      <button id="c-submit" onclick="submitCase()" class="w-full bg-blue-900 text-white p-3 rounded-lg font-bold hover:bg-blue-800">إرسال الحالة</button>
+    </div>`;
+};
+
+window.submitCase = async function() {
+  const name   = document.getElementById('c-name').value.trim();
+  const age    = parseInt(document.getElementById('c-age').value, 10);
+  const gender = document.getElementById('c-gender').value;
+  const region = document.getElementById('c-region').value.trim();
+  const desc   = document.getElementById('c-desc').value.trim();
+  const urg    = document.getElementById('c-urgency').value;
+
+  if (!name)               return toast('أدخل اسم المريض','error');
+  if (isNaN(age)||age<0||age>120) return toast('عمر غير صحيح','error');
+  if (!gender)             return toast('اختر الجنس','error');
+  if (!region)             return toast('أدخل المنطقة','error');
+  if (desc.length < 15)    return toast('الوصف قصير جداً','error');
+
+  const files = document.getElementById('c-images').files;
+  for (const f of files) {
+    if (!['image/jpeg','image/png','image/webp'].includes(f.type)) return toast(`"${f.name}" غير مدعوم`,'error');
+    if (f.size > 5*1024*1024) return toast(`"${f.name}" تتجاوز 5MB`,'error');
+  }
+
+  loading('c-submit', true);
+  try {
+    const { data: nc, error } = await sb.from('cases').insert({
+      patient_name: name, patient_age: age, patient_gender: gender,
+      patient_region: region, description: desc, urgency: urg,
+      volunteer_id: ME.id, status: 'جديدة'
+    }).select().single();
+    if (error) { console.error(error); return toast('فشل إرسال الحالة','error'); }
+
+    for (const f of files) {
+      const ext  = (f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z]/g,'');
+      const path = `cases/${nc.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: ue } = await sb.storage.from('case-images').upload(path, f);
+      if (!ue) await sb.from('case_images').insert({ case_id: nc.id, image_url: path });
+    }
+
+    // إشعار المشرفين
+    const { data: sups } = await sb.from('profiles').select('id').eq('role','medical_supervisor').eq('is_active',true);
+    if (sups?.length) {
+      await sb.from('notifications').insert(sups.map(sup=>({ profile_id:sup.id, case_id:nc.id, message:`حالة جديدة من ${ME.full_name} | ${region}`, notify_type:'info' })));
+    }
+
+    toast('تم إرسال الحالة بنجاح وسيراجعها المشرف قريباً','success');
+    renderDashboard(ME);
+  } finally { loading('c-submit', false); }
+};
+
+// ══════════════════════════════════════════════════════════
+//  DOCTOR DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function renderDoctor(dc) {
+  const lvLabel = levelLabel(ME.doctor_level);
+  dc.innerHTML = `
+    <h2 class="text-2xl font-bold text-blue-900 mb-1">د. ${s(ME.full_name)} <span class="text-sm font-normal badge-blue">${lvLabel}</span></h2>
+    <p class="text-gray-500 mb-4">${s(ME.specialty)} | ${s(ME.location)}</p>
+    <div class="flex flex-wrap gap-2 mb-6">
+      <button class="tab-btn active" data-tab="my-cases" onclick="docTab('my-cases')">حالاتي</button>
+      <button class="tab-btn" data-tab="my-stats" onclick="docTab('my-stats')">إحصائياتي</button>
+    </div>
+    <div id="doc-tab-content"></div>`;
+  docTab('my-cases');
+}
+
+window.docTab = async function(tab) {
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  const c = document.getElementById('doc-tab-content');
+  c.innerHTML = '<div class="text-gray-400 text-center py-6">جاري التحميل...</div>';
+
+  if (tab === 'my-cases') {
+    // ⚠️ نستخدم cases_doctor_view إن وُجد، أو cases مع إخفاء الحقول الشخصية في الكود
+    const { data, error } = await sb.from('cases')
+      .select('id,patient_region,description,urgency,triage_level,status,escalation_level,assigned_doctor_id,follow_up_date,created_at,diagnosis,prescription,previous_doctor_id,transferred_at')
+      .eq('assigned_doctor_id', ME.id)
+      .in('status',['قيد المعالجة','تصعيد'])
+      .order('created_at',{ascending:false});
+
+    if (error) { console.error(error); c.innerHTML = `<div class="bg-yellow-50 border border-yellow-300 p-4 rounded-lg"><p class="text-yellow-800 font-bold">⚠️ تعذّر تحميل الحالات</p><p class="text-sm text-yellow-700">تأكد من تشغيل SQL Migration في Supabase</p></div>`; return; }
+    if (!data?.length) { c.innerHTML = '<p class="text-gray-400 text-center py-6">لا توجد حالات مسندة لك حالياً</p>'; return; }
+
+    c.innerHTML = data.map(cs=>`
+      <div class="card">
+        <div class="flex flex-wrap justify-between gap-2">
+          <div>
+            <p class="font-bold">${s(cs.patient_region)} ${statusBadge(cs.status)} ${urgencyBadge(cs.triage_level||cs.urgency)}</p>
+            <p class="text-sm text-gray-600 mt-1">${clip(cs.description,100)}...</p>
+            ${cs.transferred_at ? '<p class="text-purple-600 text-xs">محوّل من طبيب آخر</p>' : ''}
+            ${cs.follow_up_date ? `<p class="text-orange-600 text-xs">📅 ${s(cs.follow_up_date)}</p>` : ''}
+          </div>
+          <div class="flex flex-col gap-2">
+            <button onclick="openCase('${s(cs.id)}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700">فتح الحالة</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  else if (tab === 'my-stats') {
+    const [r1,r2,r3] = await Promise.all([
+      sb.from('cases').select('*',{count:'exact',head:true}).eq('assigned_doctor_id',ME.id).eq('status','مغلقة'),
+      sb.from('cases').select('*',{count:'exact',head:true}).eq('assigned_doctor_id',ME.id).neq('status','مغلقة'),
+      sb.from('case_transfers').select('*',{count:'exact',head:true}).eq('from_doctor_id',ME.id)
+    ]);
+    c.innerHTML = `
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="card text-center"><div class="text-3xl font-bold text-green-600">${r1.count||0}</div><div class="text-gray-500 text-sm">حالة مُغلقة</div></div>
+        <div class="card text-center"><div class="text-3xl font-bold text-blue-600">${r2.count||0}</div><div class="text-gray-500 text-sm">حالة نشطة</div></div>
+        <div class="card text-center"><div class="text-3xl font-bold text-purple-600">${r3.count||0}</div><div class="text-gray-500 text-sm">حالة محوّلة</div></div>
+      </div>`;
+  }
+};
+
+// ── فتح الحالة (للطبيب) ──────────────────────────────────
+window.openCase = async function(cid) {
+  await openCaseFull(cid, 'doctor');
+};
+
+async function openCaseFull(cid, role) {
+  const { data: c, error } = await sb.from('cases')
+    .select('*, case_images(image_url)')
+    .eq('id', cid).single();
+  if (error || !c) return toast('فشل تحميل الحالة', 'error');
+
+  const { data: recs } = await sb.from('case_records')
+    .select('*, profiles(full_name)').eq('case_id', cid).order('created_at');
+  const { data: transfers } = await sb.from('case_transfers')
+    .select('*, from_doc:profiles!case_transfers_from_doctor_id_fkey(full_name), to_doc:profiles!case_transfers_to_doctor_id_fkey(full_name)')
+    .eq('case_id', cid);
+
+  const isAdmin   = role === 'admin';
+  const isSup     = role === 'supervisor';
+  const isDoctor  = role === 'doctor';
+
+  // خصوصية المريض: الطبيب لا يرى الاسم/العمر/الجنس
+  const patientInfo = isAdmin || isSup
+    ? `<p class="text-sm text-gray-500">المريض: ${s(c.patient_name)} | العمر: ${s(c.patient_age)} | الجنس: ${s(c.patient_gender)}</p>`
+    : `<p class="text-sm text-yellow-700 bg-yellow-50 p-2 rounded">🔒 بيانات المريض الشخصية محمية — المنطقة: ${s(c.patient_region)}</p>`;
+
+  const images = (c.case_images||[]).map(img=>{
+    const {data:ud} = sb.storage.from('case-images').getPublicUrl(img.image_url);
+    const url = ud?.publicUrl?.startsWith('https://') ? ud.publicUrl : '#';
+    return `<img src="${url}" alt="صورة" class="w-28 h-28 object-cover rounded-lg border" loading="lazy">`;
+  }).join('');
+
+  const dc = document.getElementById('dashboard-content');
+  const backFn = role === 'doctor' ? `docTab('my-cases')` : role === 'supervisor' ? `supTab('inprogress')` : `adminTab('cases')`;
+
+  dc.innerHTML = `
+    <button onclick="${backFn}" class="mb-4 text-blue-600 hover:underline text-sm">← رجوع</button>
+    <div class="card">
+      <h3 class="text-xl font-bold mb-2">${isAdmin||isSup ? s(c.patient_name) : 'الحالة'} ${statusBadge(c.status)} ${urgencyBadge(c.triage_level||c.urgency)}</h3>
+      ${patientInfo}
+      <p class="mt-3 text-gray-700 whitespace-pre-wrap">${s(c.description)}</p>
+      ${images ? `<div class="flex flex-wrap gap-2 mt-3">${images}</div>` : ''}
+      ${c.follow_up_date ? `<p class="text-orange-600 font-medium mt-2">📅 موعد متابعة: ${s(c.follow_up_date)} — ${s(c.follow_up_note)}</p>` : ''}
+    </div>
+
+    <!-- السجل الطبي -->
+    <div class="card">
+      <div class="section-title">السجل الطبي للحالة</div>
+      <div id="records-list">
+        ${(recs||[]).map(r=>`<div class="border-r-4 border-blue-300 pr-3 mb-3 pb-2">
+          <p class="text-sm text-gray-700">${s(r.note)}</p>
+          <p class="text-xs text-gray-400">${s(r.profiles?.full_name)} — ${new Date(r.created_at).toLocaleString('ar')}</p>
+        </div>`).join('') || '<p class="text-gray-400">لا سجلات بعد</p>'}
+      </div>
+      <textarea id="new-rec" placeholder="إضافة ملاحظة طبية..." class="w-full p-3 mt-3 border border-gray-300 rounded-lg h-20"></textarea>
+      <button onclick="addRecord('${s(cid)}')" class="mt-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm hover:bg-blue-200">إضافة ملاحظة</button>
+    </div>
+
+    ${isDoctor && c.status !== 'مغلقة' ? `
+    <!-- إغلاق الحالة -->
+    <div class="card">
+      <div class="section-title">التشخيص والوصفة</div>
+      <textarea id="diag" placeholder="التشخيص *" maxlength="3000" class="w-full p-3 mb-3 border border-gray-300 rounded-lg h-24">${s(c.diagnosis||'')}</textarea>
+      <textarea id="presc" placeholder="الوصفة الطبية *" maxlength="3000" class="w-full p-3 mb-3 border border-gray-300 rounded-lg h-24">${s(c.prescription||'')}</textarea>
+      <div class="flex flex-wrap gap-3">
+        <button id="close-btn" onclick="closeCase('${s(cid)}')" class="bg-green-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-green-700">✓ إغلاق الحالة</button>
+        ${canEscalate(ME.doctor_level) ? `<button onclick="escalateCase('${s(cid)}','${s(ME.doctor_level)}')" class="bg-orange-500 text-white px-5 py-2 rounded-lg font-bold hover:bg-orange-600">↑ تصعيد الحالة</button>` : ''}
+        <button onclick="transferCase('${s(cid)}')" class="bg-purple-100 text-purple-700 px-5 py-2 rounded-lg font-bold hover:bg-purple-200">⇄ تحويل الحالة</button>
+      </div>
+    </div>` : ''}
+
+    ${transfers?.length ? `
+    <div class="card">
+      <div class="section-title">سجل التحويلات</div>
+      ${transfers.map(t=>`<p class="text-sm text-gray-600 mb-1">من: ${s(t.from_doc?.full_name||'—')} → إلى: ${s(t.to_doc?.full_name)} | ${s(t.reason)}</p>`).join('')}
+    </div>` : ''}`;
+}
+
+function canEscalate(level) {
+  return level === 'general' || level === 'specialist';
+}
+
+window.addRecord = async function(cid) {
+  const note = document.getElementById('new-rec').value.trim();
+  if (!note) return toast('أدخل الملاحظة','error');
+  await sb.from('case_records').insert({ case_id: cid, note, record_type:'note', created_by: ME.id });
+  toast('تمت إضافة الملاحظة','success');
+  document.getElementById('new-rec').value = '';
+  openCaseFull(cid, ME.role === 'medical_supervisor' ? 'supervisor' : 'doctor');
+};
+
+window.closeCase = async function(cid) {
+  const diag  = document.getElementById('diag').value.trim();
+  const presc = document.getElementById('presc').value.trim();
+  if (!diag)  return toast('أدخل التشخيص','error');
+  if (!presc) return toast('أدخل الوصفة الطبية','error');
+  loading('close-btn', true);
+  try {
+    const { error } = await sb.from('cases').update({ diagnosis:diag, prescription:presc, status:'مغلقة', closed_at: new Date().toISOString() }).eq('id', cid);
+    if (error) return toast('فشل الإغلاق','error');
+    await sb.from('case_records').insert({ case_id:cid, note:`[إغلاق] التشخيص: ${diag} | الوصفة: ${presc}`, record_type:'diagnosis', created_by:ME.id });
+    // إشعار المتطوع
+    const { data: cs } = await sb.from('cases').select('volunteer_id').eq('id', cid).single();
+    if (cs?.volunteer_id) await sb.from('notifications').insert({ profile_id:cs.volunteer_id, case_id:cid, message:'تم إغلاق الحالة وكتابة التشخيص. يمكنك الاطلاع عليه.', notify_type:'info' });
+    toast('تم إغلاق الحالة بنجاح','success');
+    docTab('my-cases');
+  } finally { loading('close-btn', false); }
+};
+
+window.escalateCase = async function(cid, currentLevel) {
+  const nextLevel = currentLevel === 'general' ? 'specialist' : 'consultant';
+  const note = prompt(`سبب التصعيد إلى ${levelLabel(nextLevel)}:`);
+  if (!note) return;
+
+  const { data: docs } = await sb.from('profiles').select('id,full_name,specialty,doctor_level').eq('role','doctor').eq('is_active',true).eq('doctor_level', nextLevel);
+  if (!docs?.length) return toast(`لا يوجد ${levelLabel(nextLevel)} متاح حالياً. تواصل مع المشرف.`, 'warn');
+
+  const opts = docs.map((d,i)=>`${i+1}. د. ${d.full_name} — ${d.specialty}`).join('\n');
+  const idx  = prompt(`اختر الطبيب المستهدف (ادخل الرقم):\n${opts}`);
+  const doc  = docs[parseInt(idx)-1];
+  if (!doc) return toast('اختيار غير صحيح','error');
+
+  await sb.from('cases').update({ assigned_doctor_id: doc.id, escalation_level: nextLevel==='specialist'?1:2, escalation_note: note, previous_doctor_id: ME.id, status:'تصعيد' }).eq('id', cid);
+  await sb.from('case_records').insert({ case_id:cid, note:`[تصعيد] من ${levelLabel(currentLevel)} → ${levelLabel(nextLevel)}: ${note}`, record_type:'escalation', created_by:ME.id });
+  await sb.from('notifications').insert({ profile_id:doc.id, case_id:cid, message:`حالة مصعّدة من د.${ME.full_name}: ${note}`, notify_type:'urgent' });
+  toast('تم تصعيد الحالة بنجاح','success');
+  docTab('my-cases');
+};
+
+window.transferCase = async function(cid) {
+  const { data: docs } = await sb.from('profiles').select('id,full_name,specialty,doctor_level').eq('role','doctor').eq('is_active',true).neq('id',ME.id);
+  if (!docs?.length) return toast('لا يوجد أطباء آخرون','warn');
+  const opts = docs.map((d,i)=>`${i+1}. د. ${d.full_name} — ${d.specialty} [${levelLabel(d.doctor_level)}]`).join('\n');
+  const idx  = prompt(`اختر الطبيب الذي ستحول إليه الحالة:\n${opts}`);
+  const doc  = docs[parseInt(idx)-1];
+  if (!doc) return toast('اختيار غير صحيح','error');
+  const reason = prompt('سبب التحويل:') || 'تحويل';
+
+  await sb.from('cases').update({ assigned_doctor_id:doc.id, previous_doctor_id:ME.id, transferred_at:new Date().toISOString(), status:'محوّلة' }).eq('id', cid);
+  await sb.from('case_transfers').insert({ case_id:cid, from_doctor_id:ME.id, to_doctor_id:doc.id, reason });
+  await sb.from('case_records').insert({ case_id:cid, note:`[تحويل] من د.${ME.full_name} → د.${doc.full_name}: ${reason}`, record_type:'transfer', created_by:ME.id });
+  await sb.from('notifications').insert({ profile_id:doc.id, case_id:cid, message:`تم تحويل حالة إليك من د.${ME.full_name}: ${reason}`, notify_type:'info' });
+  toast('تم تحويل الحالة بنجاح','success');
+  docTab('my-cases');
+};
+
+// ── Helpers ───────────────────────────────────────────────
+window.filterTable = function(tableId, inputId) {
+  const q = document.getElementById(inputId).value.toLowerCase();
+  document.querySelectorAll(`#${tableId} > div`).forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+};
+
+</script>
+</body>
+</html>
