@@ -55,7 +55,7 @@
             if (authError) return alert('خطأ: ' + authError.message);
 
             const profileData = {
-                user_id: authData.user.id, email, full_name, phone,
+                id: authData.user.id, email, full_name, phone,
                 role: window.currentRoleType === 'doctor'? 'doctor' : 'field_volunteer',
                 is_active: false
             };
