@@ -37,9 +37,7 @@
 <!-- Toast -->
 <div id="toast"></div>
 
-<!-- ═══════════════════════════════════════════════════════
-     NAVBAR
-═══════════════════════════════════════════════════════ -->
+<!-- NAVBAR -->
 <nav class="bg-blue-900 text-white shadow-xl sticky top-0 z-50">
   <div class="container mx-auto px-4 py-3 flex justify-between items-center">
     <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
@@ -64,12 +62,10 @@
   <div id="notif-panel" class="hidden absolute left-4 top-16 w-80 bg-white text-gray-800 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto"></div>
 </nav>
 
-<!-- ═══════════════════════════════════════════════════════
-     PAGES CONTAINER
-═══════════════════════════════════════════════════════ -->
+<!-- PAGES CONTAINER -->
 <div id="app" class="container mx-auto px-4 py-6">
 
-  <!-- ── LANDING ─────────────────────────────────────── -->
+  <!-- ── LANDING ── -->
   <div id="page-landing">
     <div class="text-center py-12">
       <h1 class="text-5xl font-extrabold text-blue-900 mb-3">شفاء السودان</h1>
@@ -99,7 +95,7 @@
     </div>
   </div>
 
-  <!-- ── LOGIN ────────────────────────────────────────── -->
+  <!-- ── LOGIN ── -->
   <div id="page-login" class="hidden max-w-md mx-auto">
     <div class="card">
       <h2 class="text-2xl font-bold text-center text-blue-900 mb-6">تسجيل الدخول</h2>
@@ -113,7 +109,7 @@
     </div>
   </div>
 
-  <!-- ── REGISTER ──────────────────────────────────────── -->
+  <!-- ── REGISTER ── -->
   <div id="page-register" class="hidden max-w-2xl mx-auto">
     <div class="card">
       <h2 id="reg-title" class="text-2xl font-bold text-center text-blue-900 mb-6">تسجيل جديد</h2>
@@ -190,16 +186,13 @@
     </div>
   </div>
 
-  <!-- ── DASHBOARD ─────────────────────────────────────── -->
+  <!-- ── DASHBOARD ── -->
   <div id="page-dashboard" class="hidden">
     <div id="dashboard-content"></div>
   </div>
 
-</div><!-- /app -->
+</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════════════════ -->
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -207,10 +200,8 @@ const SB_URL = 'https://qhjszxgjdaxzenirfbtc.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoanN6eGdqZGF4emVuaXJmYnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NDU2MTgsImV4cCI6MjA5NTIyMTYxOH0.5L1lO0IBN6hvRVBXzvErlmcQPVJ3jsoVpr7zlHlmcpg';
 const sb = createClient(SB_URL, SB_KEY);
 
-// ── State ────────────────────────────────────────────────
-let ME = null; // current profile
+let ME = null;
 
-// ── Utilities ────────────────────────────────────────────
 function s(v) {
   if (v === null || v === undefined) return '';
   const d = document.createElement('div');
@@ -245,7 +236,6 @@ function levelLabel(lv) {
   return lv === 'specialist' ? 'أخصائي' : lv === 'consultant' ? 'استشاري' : 'عمومي';
 }
 
-// ── Page Router ──────────────────────────────────────────
 window.showPage = function(name) {
   ['landing','login','register','dashboard'].forEach(p =>
     document.getElementById('page-' + p).classList.add('hidden'));
@@ -273,11 +263,9 @@ window.toggleRecommendation = function() {
   document.getElementById('reg-recommendation-section').classList.toggle('hidden', v !== 'other');
 };
 
-// ── Validation ───────────────────────────────────────────
 function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 function validPhone(p) { return /^[\d\+\-\s]{7,20}$/.test(p); }
 
-// ── REGISTER ─────────────────────────────────────────────
 window.doRegister = async function() {
   const name     = document.getElementById('reg-name').value.trim();
   const email    = document.getElementById('reg-email').value.trim();
@@ -301,7 +289,6 @@ window.doRegister = async function() {
 
   loading('reg-submit', true);
   try {
-    // إنشاء حساب Auth بكلمة مرور مؤقتة — الأدمن سيُعيّن كلمة مرور للمتطوعين
     const tempPw = Math.random().toString(36).slice(2, 10) + 'A1!';
     const { data: auth, error: authErr } = await sb.auth.signUp({ email, password: tempPw });
     if (authErr) { console.error(authErr); return toast('فشل إنشاء الحساب: ' + (authErr.message.includes('already') ? 'البريد مستخدم مسبقاً' : 'حاول لاحقاً'), 'error'); }
@@ -333,7 +320,6 @@ window.doRegister = async function() {
   } finally { loading('reg-submit', false); }
 };
 
-// ── LOGIN ─────────────────────────────────────────────────
 window.doLogin = async function() {
   const id = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
@@ -343,7 +329,6 @@ window.doLogin = async function() {
   try {
     let email = id;
 
-    // إذا ليس بريد → بحث باسم المستخدم
     if (!validEmail(id)) {
       const { data: p } = await sb.from('profiles').select('email').eq('username', id).single();
       if (!p) return toast('اسم المستخدم غير موجود', 'error');
@@ -380,7 +365,6 @@ window.doLogout = async function() {
   showPage('landing'); loadPublicStats();
 };
 
-// ── SESSION RESTORE ───────────────────────────────────────
 sb.auth.getSession().then(async ({ data: { session } }) => {
   if (!session) { showPage('landing'); loadPublicStats(); return; }
   const { data: p } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
@@ -395,7 +379,6 @@ sb.auth.getSession().then(async ({ data: { session } }) => {
   } else { showPage('landing'); loadPublicStats(); }
 });
 
-// ── PUBLIC STATS ─────────────────────────────────────────
 async function loadPublicStats() {
   try {
     const [r1,r2,r3,r4] = await Promise.all([
@@ -411,7 +394,6 @@ async function loadPublicStats() {
   } catch(e) { console.error(e); }
 }
 
-// ── NOTIFICATIONS ─────────────────────────────────────────
 async function loadNotifications() {
   if (!ME) return;
   const { data } = await sb.from('notifications').select('*').eq('profile_id', ME.id).eq('is_read', false).order('created_at',{ascending:false}).limit(20);
@@ -454,7 +436,6 @@ window.markAllRead = async function() {
   loadNotifications();
 };
 
-// ── DASHBOARD ROUTER ─────────────────────────────────────
 function renderDashboard(p) {
   showPage('dashboard');
   const dc = document.getElementById('dashboard-content');
@@ -466,9 +447,9 @@ function renderDashboard(p) {
 }
 window.renderDashboard = renderDashboard;
 
-// ══════════════════════════════════════════════════════════
+// ==========================================
 //  ADMIN DASHBOARD
-// ══════════════════════════════════════════════════════════
+// ==========================================
 async function renderAdmin(dc) {
   dc.innerHTML = `
     <h2 class="text-2xl font-bold text-blue-900 mb-4">لوحة تحكم الأدمن — ${s(ME.full_name)}</h2>
@@ -510,7 +491,7 @@ window.adminTab = async function(tab) {
     const { data } = await sb.from('profiles').select('*').eq('role','doctor').eq('is_active',true).order('full_name');
     c.innerHTML = `
       <div class="mb-4 flex gap-2">
-        <input id="doc-search" placeholder="بحث..." class="p-2 border rounded-lg flex-1" oninput="filterTable('doc-table','doc-search')">
+        <input id="doc-search" placeholder="بحث باسم الطبيب أو التخصص..." class="p-2 border rounded-lg flex-1" oninput="filterTable('doc-table','doc-search')">
       </div>
       <div id="doc-table" class="space-y-3">${(data||[]).map(d=>`
         <div class="card flex flex-wrap justify-between items-center gap-3">
@@ -529,7 +510,7 @@ window.adminTab = async function(tab) {
   else if (tab === 'volunteers') {
     const { data } = await sb.from('profiles').select('*').eq('role','field_volunteer').eq('is_active',true).order('full_name');
     c.innerHTML = `
-      <div class="mb-4"><input id="vol-search" placeholder="بحث..." class="p-2 border rounded-lg w-full" oninput="filterTable('vol-table','vol-search')"></div>
+      <div class="mb-4"><input id="vol-search" placeholder="بحث باسم المتطوع..." class="p-2 border rounded-lg w-full" oninput="filterTable('vol-table','vol-search')"></div>
       <div id="vol-table" class="space-y-3">${(data||[]).map(v=>`
         <div class="card flex flex-wrap justify-between items-center gap-3">
           <div>
@@ -562,15 +543,12 @@ window.adminTab = async function(tab) {
 
 window.adminActivate = async function(uid, role, name) {
   if (role === 'field_volunteer') {
-    // طلب اسم مستخدم للمتطوع
     const uname = prompt(`أدخل اسم المستخدم للمتطوع "${name}":`);
     if (!uname) return;
     const pw    = prompt('أدخل كلمة المرور المؤقتة (ستُرسل للمتطوع عبر واتساب):');
     if (!pw) return;
-    // تحديث profile
     const { error } = await sb.from('profiles').update({ is_active: true, username: uname.trim() }).eq('id', uid);
     if (error) return toast('فشل التفعيل: ' + error.message, 'error');
-    // تحديث كلمة المرور عبر Admin API (يتطلب service_role — هنا نعرض فقط)
     toast(`تم التفعيل! أرسل للمتطوع: اسم المستخدم: ${uname} | كلمة المرور: ${pw}`, 'success', 8000);
   } else {
     const { error } = await sb.from('profiles').update({ is_active: true }).eq('id', uid);
@@ -643,11 +621,9 @@ window.adminOpenCase = async function(cid) {
 };
 
 async function renderInternalStats(c) {
-  // أكثر الأطباء نشاطاً
   const { data: topDocs } = await sb.from('cases').select('assigned_doctor_id, profiles!cases_assigned_doctor_id_fkey(full_name,specialty,location,doctor_level)').eq('status','مغلقة').not('assigned_doctor_id','is',null);
   const { data: regions } = await sb.from('cases').select('patient_region').not('patient_region','is',null);
 
-  // تجميع
   const docCount = {};
   (topDocs||[]).forEach(r => {
     const did = r.assigned_doctor_id;
@@ -684,9 +660,9 @@ async function renderInternalStats(c) {
     </div>`;
 }
 
-// ══════════════════════════════════════════════════════════
+// ==========================================
 //  SUPERVISOR DASHBOARD
-// ══════════════════════════════════════════════════════════
+// ==========================================
 async function renderSupervisor(dc) {
   dc.innerHTML = `
     <h2 class="text-2xl font-bold text-blue-900 mb-4">لوحة المشرف الطبي — ${s(ME.full_name)}</h2>
@@ -717,90 +693,54 @@ window.supTab = async function(tab) {
     const docOpts = (doctors||[]).map(d=>
       `<option value="${s(d.id)}">[${levelLabel(d.doctor_level)}] د. ${s(d.full_name)} — ${s(d.specialty)} (${s(d.location)})</option>`
     ).join('');
+
     return `
-    <div class="card" id="case-card-${s(cs.id)}">
-      <div class="flex flex-wrap justify-between gap-2 mb-3">
-        <div>
-          <p class="font-bold">${s(cs.patient_region)} ${statusBadge(cs.status)}</p>
-          <p class="text-sm text-gray-600">${clip(cs.description,120)}...</p>
+      <div class="card">
+        <div class="flex flex-wrap justify-between gap-3 mb-2">
+          <div>
+            <p class="font-bold">${s(cs.patient_name||'مجهول')} — ${s(cs.patient_region)} ${statusBadge(cs.status)} ${urgencyBadge(cs.urgency)}</p>
+            <p class="text-sm text-gray-600 mt-1">${clip(cs.description, 120)}...</p>
+          </div>
+          <button onclick="openCaseSupervisor('${s(cs.id)}')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200">فتح وترياج</button>
         </div>
-      </div>
-      ${tab==='triage' ? `
-      <div class="bg-blue-50 rounded-lg p-3">
-        <p class="text-sm font-semibold text-blue-800 mb-2">تصنيف الحالة وإسنادها:</p>
-        <div class="grid md:grid-cols-3 gap-2 mb-3">
-          <select id="triage-lv-${s(cs.id)}" class="p-2 border rounded-lg">
-            <option value="">مستوى الخطورة</option>
-            <option value="بارد">🟢 بارد</option>
-            <option value="متوسط">🟡 متوسط</option>
-            <option value="مستعجل">🔴 مستعجل</option>
+        ${tab === 'triage' ? `
+        <div class="mt-3 flex flex-wrap gap-2 items-center bg-slate-50 p-2 rounded-lg">
+          <select id="urg-${s(cs.id)}" class="p-2 border rounded-lg text-sm">
+            <option value="عادية" ${cs.urgency==='عادية'?'selected':''}>عادية</option>
+            <option value="متوسطة" ${cs.urgency==='متوسطة'?'selected':''}>متوسطة</option>
+            <option value="عاجلة" ${cs.urgency==='عاجلة'||cs.urgency==='مستعجل'?'selected':''}>عاجلة</option>
           </select>
-          <select id="triage-doc-${s(cs.id)}" class="p-2 border rounded-lg col-span-2">
-            <option value="">اختر طبيباً</option>${docOpts}
+          <select id="doc-${s(cs.id)}" class="p-2 border rounded-lg text-sm flex-1">
+            <option value="">اسناد لطبيب...</option>
+            ${docOpts}
           </select>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="assignTriage('${s(cs.id)}')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700">إسناد</button>
-          <button onclick="aiTriage('${s(cs.id)}','${clip(cs.description,300)}')" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-200">🤖 ترياج AI</button>
-        </div>
-      </div>` : `
-      <div class="flex gap-2 mt-2">
-        <button onclick="addFollowUp('${s(cs.id)}')" class="bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg text-sm hover:bg-orange-200">📅 موعد متابعة</button>
-        <button onclick="openSupervisorCase('${s(cs.id)}')" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm hover:bg-blue-200">عرض السجل</button>
-      </div>`}
-    </div>`;
+          <button onclick="assignCaseSupervisor('${s(cs.id)}')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-700">تأكيد الإسناد</button>
+        </div>` : ''}
+      </div>`;
   }).join('');
 };
 
-window.assignTriage = async function(cid) {
-  const lv  = document.getElementById(`triage-lv-${cid}`).value;
-  const did = document.getElementById(`triage-doc-${cid}`).value;
-  if (!lv)  return toast('اختر مستوى الخطورة', 'error');
-  if (!did) return toast('اختر طبيباً', 'error');
-  const { error } = await sb.from('cases').update({
-    triage_level: lv, assigned_doctor_id: did,
-    supervisor_id: ME.id, status: 'قيد المعالجة'
-  }).eq('id', cid);
-  if (error) return toast('فشل الإسناد: ' + error.message, 'error');
-  // إشعار الطبيب
-  await sb.from('notifications').insert({ profile_id: did, case_id: cid, message: `تم إسناد حالة جديدة لك بمستوى: ${lv}`, notify_type: lv==='مستعجل'?'urgent':'info' });
-  await sb.from('case_records').insert({ case_id: cid, note: `[ترياج] مستوى: ${lv} — أُسندت للطبيب`, record_type:'escalation', created_by: ME.id });
-  toast('تم الإسناد بنجاح', 'success');
-  document.getElementById(`case-card-${cid}`)?.remove();
+window.openCaseSupervisor = function(cid) {
+  openCaseFull(cid, 'supervisor');
 };
 
-window.aiTriage = async function(cid, desc) {
-  // محاكاة ترياج الذكاء الاصطناعي (keyword-based — يمكن استبداله بـ API)
-  const urgent_kw = ['نزيف','فقدان الوعي','صعوبة التنفس','سكتة','احتشاء','حوادث','غرق','حروق','حمل'];
-  const mild_kw   = ['زكام','رشح','سعال خفيف','صداع بسيط','إرهاق'];
-  const lower = desc.toLowerCase();
-  let level = 'متوسط';
-  if (urgent_kw.some(k => desc.includes(k))) level = 'مستعجل';
-  else if (mild_kw.some(k => desc.includes(k))) level = 'بارد';
-  document.getElementById(`triage-lv-${cid}`).value = level;
-  toast(`🤖 AI اقترح: ${level} — راجع واختر الطبيب ثم اضغط إسناد`, 'info', 5000);
-  await sb.from('cases').update({ ai_triage: true }).eq('id', cid);
+window.assignCaseSupervisor = async function(cid) {
+  const urg = document.getElementById(`urg-${cid}`).value;
+  const doc = document.getElementById(`doc-${cid}`).value;
+  if (!doc) return toast('اختر طبيباً أولاً','error');
+
+  const { error } = await sb.from('cases').update({ triage_level:urg, assigned_doctor_id:doc, status:'قيد المعالجة' }).eq('id', cid);
+  if (error) return toast('فشل الإسناد','error');
+
+  await sb.from('case_records').insert({ case_id:cid, note:`[ترياج وإسناد] الخطورة: ${urg} — الطبيب: ${doc}`, record_type:'transfer', created_by:ME.id });
+  await sb.from('notifications').insert({ profile_id:doc, case_id:cid, message:`تم إسناد حالة جديدة لك بدرجة خطورة ${urg}`, notify_type:'info' });
+  toast('تم إسناد الحالة بنجاح','success');
+  supTab('triage');
 };
 
-window.addFollowUp = async function(cid) {
-  const dt   = prompt('أدخل تاريخ المتابعة (YYYY-MM-DD):');
-  if (!dt) return;
-  const note = prompt('ملاحظة للمتطوع الميداني:') || '';
-  const { data: cs } = await sb.from('cases').select('volunteer_id').eq('id', cid).single();
-  await sb.from('cases').update({ follow_up_date: dt, follow_up_note: note }).eq('id', cid);
-  if (cs?.volunteer_id) {
-    await sb.from('notifications').insert({ profile_id: cs.volunteer_id, case_id: cid, message: `تذكير: حالتك لديها موعد متابعة بتاريخ ${dt}. ${note}`, notify_type:'followup' });
-  }
-  toast('تم تحديد موعد المتابعة وإرسال إشعار للمتطوع', 'success');
-};
-
-window.openSupervisorCase = async function(cid) {
-  await openCaseFull(cid, 'supervisor');
-};
-
-// ══════════════════════════════════════════════════════════
+// ==========================================
 //  VOLUNTEER DASHBOARD
-// ══════════════════════════════════════════════════════════
+// ==========================================
 async function renderVolunteer(dc) {
   dc.innerHTML = `
     <h2 class="text-2xl font-bold text-blue-900 mb-4">لوحة المتطوع — ${s(ME.full_name)}</h2>
@@ -890,7 +830,6 @@ window.submitCase = async function() {
       if (!ue) await sb.from('case_images').insert({ case_id: nc.id, image_url: path });
     }
 
-    // إشعار المشرفين
     const { data: sups } = await sb.from('profiles').select('id').eq('role','medical_supervisor').eq('is_active',true);
     if (sups?.length) {
       await sb.from('notifications').insert(sups.map(sup=>({ profile_id:sup.id, case_id:nc.id, message:`حالة جديدة من ${ME.full_name} | ${region}`, notify_type:'info' })));
@@ -901,9 +840,9 @@ window.submitCase = async function() {
   } finally { loading('c-submit', false); }
 };
 
-// ══════════════════════════════════════════════════════════
+// ==========================================
 //  DOCTOR DASHBOARD
-// ══════════════════════════════════════════════════════════
+// ==========================================
 async function renderDoctor(dc) {
   const lvLabel = levelLabel(ME.doctor_level);
   dc.innerHTML = `
@@ -923,7 +862,6 @@ window.docTab = async function(tab) {
   c.innerHTML = '<div class="text-gray-400 text-center py-6">جاري التحميل...</div>';
 
   if (tab === 'my-cases') {
-    // ⚠️ نستخدم cases_doctor_view إن وُجد، أو cases مع إخفاء الحقول الشخصية في الكود
     const { data, error } = await sb.from('cases')
       .select('id,patient_region,description,urgency,triage_level,status,escalation_level,assigned_doctor_id,follow_up_date,created_at,diagnosis,prescription,previous_doctor_id,transferred_at')
       .eq('assigned_doctor_id', ME.id)
@@ -964,7 +902,6 @@ window.docTab = async function(tab) {
   }
 };
 
-// ── فتح الحالة (للطبيب) ──────────────────────────────────
 window.openCase = async function(cid) {
   await openCaseFull(cid, 'doctor');
 };
@@ -985,7 +922,6 @@ async function openCaseFull(cid, role) {
   const isSup     = role === 'supervisor';
   const isDoctor  = role === 'doctor';
 
-  // خصوصية المريض: الطبيب لا يرى الاسم/العمر/الجنس
   const patientInfo = isAdmin || isSup
     ? `<p class="text-sm text-gray-500">المريض: ${s(c.patient_name)} | العمر: ${s(c.patient_age)} | الجنس: ${s(c.patient_gender)}</p>`
     : `<p class="text-sm text-yellow-700 bg-yellow-50 p-2 rounded">🔒 بيانات المريض الشخصية محمية — المنطقة: ${s(c.patient_region)}</p>`;
@@ -1065,7 +1001,7 @@ window.closeCase = async function(cid) {
     const { error } = await sb.from('cases').update({ diagnosis:diag, prescription:presc, status:'مغلقة', closed_at: new Date().toISOString() }).eq('id', cid);
     if (error) return toast('فشل الإغلاق','error');
     await sb.from('case_records').insert({ case_id:cid, note:`[إغلاق] التشخيص: ${diag} | الوصفة: ${presc}`, record_type:'diagnosis', created_by:ME.id });
-    // إشعار المتطوع
+    
     const { data: cs } = await sb.from('cases').select('volunteer_id').eq('id', cid).single();
     if (cs?.volunteer_id) await sb.from('notifications').insert({ profile_id:cs.volunteer_id, case_id:cid, message:'تم إغلاق الحالة وكتابة التشخيص. يمكنك الاطلاع عليه.', notify_type:'info' });
     toast('تم إغلاق الحالة بنجاح','success');
@@ -1110,7 +1046,6 @@ window.transferCase = async function(cid) {
   docTab('my-cases');
 };
 
-// ── Helpers ───────────────────────────────────────────────
 window.filterTable = function(tableId, inputId) {
   const q = document.getElementById(inputId).value.toLowerCase();
   document.querySelectorAll(`#${tableId} > div`).forEach(el => {
