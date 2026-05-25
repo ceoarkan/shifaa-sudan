@@ -84,7 +84,7 @@
             const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
             if (error) return alert('خطأ: ' + error.message);
 
-            const { data: profile } = await window.supabaseClient.from('profiles').select('*').eq('user_id', data.user.id).single();
+            const { data: profile } = await window.supabaseClient.from('profiles').select('*').eq('id', user.id).single();
             if (!profile.is_active) return alert('حسابك غير مفعل بعد. انتظر موافقة الأدمن');
 
             currentUser = data.user;
@@ -154,7 +154,7 @@
                 pending.forEach(p => {
                     html += `<div class="bg-white p-4 rounded shadow flex justify-between items-center">
                         <div><b>${p.full_name}</b> - ${p.role === 'doctor'? 'طبيب ' + p.specialty : 'متطوع ميداني'}<br>${p.email}</div>
-                        <button onclick="activateUser('${p.user_id}')" class="bg-green-600 text-white px-4 py-2 rounded">تفعيل</button>
+                        <button onclick="activateUser('${p.userId}')" class="bg-green-600 text-white px-4 py-2 rounded">تفعيل</button>
                     </div>`;
                 });
                 html += '</div>';
@@ -163,7 +163,7 @@
         }
 
         window.activateUser = async (userId) => {
-            await window.supabaseClient.from('profiles').update({ is_active: true }).eq('user_id', userId);
+            await window.supabaseClient.from('profiles').update({ is_active: true }).eq('id', userId);
             loadAdminPanel();
         }
 
