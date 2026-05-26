@@ -1152,8 +1152,9 @@ window.submitVolCase=async function(){
 
     for(const f of files){
       const ext=(f.name.split('.').pop()||'jpg').replace(/[^a-z]/gi,'').toLowerCase();
-      const{error:ue}=await sb.storage.from('medical-files').upload(`cases/${nc.id}/${Date.now()}.${ext}`,f);
-      if(!ue)await sb.from('case_images').insert({case_id:nc.id,image_url:`cases/${nc.id}/${Date.now()}.${ext}`});
+      const imgPath=`cases/${nc.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const{error:ue}=await sb.storage.from('medical-files').upload(imgPath,f);
+      if(!ue)await sb.from('case_images').insert({case_id:nc.id,image_url:imgPath});
     }
 
     const{data:sups}=await sb.from('profiles').select('id').eq('role','medical_supervisor').eq('is_active',true);
