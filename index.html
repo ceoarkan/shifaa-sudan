@@ -533,7 +533,7 @@ window.regDoctor=async function(){
     if(ae){console.error(ae);return toast(ae.message.includes('already')?'هذا البريد مسجّل مسبقاً':'فشل إنشاء الحساب، حاول لاحقاً','error');}
     if(!auth?.user)return toast('خطأ غير متوقع','error');
 
-    const{data:up}=await sb.storage.from('certificates').upload(`${auth.user.id}/cert.pdf`,cert,{upsert:true});
+    const{data:up}=await sb.storage.from('licenses').upload(`${auth.user.id}/cert.pdf`,cert,{upsert:true});
     const{error:pe}=await sb.from('profiles').insert({
       id:auth.user.id,email,full_name:name,whatsapp_phone:phone,location:loc,
       role:'doctor',doctor_level:level,specialty:spec,
@@ -700,7 +700,7 @@ window.aTab=async function(t){
             </div>
             <div class="small">${p.role==='doctor'?`${sc(p.specialty)} | رخصة: ${sc(p.medical_license_number)}`:''}  ${sc(p.location)}</div>
             <div class="small mt1">واتساب: <a href="https://wa.me/${(p.whatsapp_phone||p.phone||'').replace(/\D/g,'')}" target="_blank" style="color:var(--g)">📱 ${sc(p.whatsapp_phone||p.phone||'—')}</a> ${p.email?`| ${sc(p.email)}`:''}</div>
-            ${p.certificate_url?`<a href="${SB_URL}/storage/v1/object/public/certificates/${sc(p.certificate_url)}" target="_blank" class="btn-link" style="font-size:.8rem">📄 عرض الشهادة</a>`:''}
+            ${p.certificate_url?`<a href="${SB_URL}/storage/v1/object/public/licenses/${sc(p.certificate_url)}" target="_blank" class="btn-link" style="font-size:.8rem">📄 عرض الشهادة</a>`:''}
           </div>
           <div class="flex-end">
             <button class="btn btn-success btn-sm" onclick="aActivate('${sc(p.id)}','${sc(p.role)}','${sc(p.full_name)}','${sc((p.whatsapp_phone||p.phone||'').replace(/\D/g,''))}')">✓ تفعيل</button>
@@ -979,10 +979,11 @@ window.supAssign=async function(cid){
   const did=document.getElementById(`tdc-${cid}`)?.value;
   if(!lv)return toast('اختر مستوى الخطورة','error');
   if(!did)return toast('اختر طبيباً','error');
-  const{error}=await sb.from('cases').update({triage_level:lv,assigned_doctor_id:did,supervisor_id:ME.id,status:'قيد المعالجة'}).eq('id',cid);
-  if(error)return toast('فشل الإسناد: '+error.message,'error');
+  const{data:cs,error}=await sb.from('cases').update({triage_level:lv,assigned_doctor_id:did,supervisor_id:ME.id,status:'قيد المعالجة'}).eq('id',cid).select('patient_region').single();
+  if(error){console.error(error);return toast('فشل الإسناد: '+error.message,'error');}
+  const region=cs?.patient_region||'—';
   await sb.from('case_records').insert({case_id:cid,note:`[ترياج] مستوى: ${lv} — أُسندت للطبيب`,record_type:'escalation',created_by:ME.id});
-  await sb.from('notifications').insert({profile_id:did,case_id:cid,message:`حالة جديدة مُسندة لك — المنطقة: ${(await sb.from('cases').select('patient_region').eq('id',cid).single()).data?.patient_region||'—'} | الخطورة: ${lv}`,notify_type:lv==='مستعجل'?'urgent':'info'});
+  await sb.from('notifications').insert({profile_id:did,case_id:cid,message:`حالة جديدة مُسندة لك — المنطقة: ${region} | الخطورة: ${lv}`,notify_type:lv==='مستعجل'?'urgent':'info'});
   toast('تم الإسناد بنجاح','success');
   document.getElementById(`cc-${cid}`)?.remove();
 };
@@ -1151,7 +1152,7 @@ window.submitVolCase=async function(){
 
     for(const f of files){
       const ext=(f.name.split('.').pop()||'jpg').replace(/[^a-z]/gi,'').toLowerCase();
-      const{error:ue}=await sb.storage.from('case-images').upload(`cases/${nc.id}/${Date.now()}.${ext}`,f);
+      const{error:ue}=await sb.storage.from('medical-files').upload(`cases/${nc.id}/${Date.now()}.${ext}`,f);
       if(!ue)await sb.from('case_images').insert({case_id:nc.id,image_url:`cases/${nc.id}/${Date.now()}.${ext}`});
     }
 
@@ -1176,7 +1177,7 @@ async function openCaseFull(cid,role){
   const backFn=isDoc?`docTab('mycases')`:isSup?`supTab('ongoing')`:`aTab('cases')`;
 
   const imgs=(c.imgs||[]).map(img=>{
-    const{data:u}=sb.storage.from('case-images').getPublicUrl(img.image_url);
+    const{data:u}=sb.storage.from('medical-files').getPublicUrl(img.image_url);
     return u?.publicUrl?.startsWith('https://')?`<img src="${u.publicUrl}" alt="صورة" style="width:110px;height:110px;object-fit:cover;border-radius:8px;border:2px solid var(--gyb)" loading="lazy">`:'';
   }).join('');
 
