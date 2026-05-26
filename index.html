@@ -396,10 +396,13 @@ textarea.v-input{min-height:80px;resize:vertical}
       <input id="rv-phone" type="tel" class="v-input" placeholder="+249 9XX XXX XXXX" maxlength="20">
       <label class="v-label">الولاية / المدينة *</label>
       <input id="rv-loc" type="text" class="v-input" placeholder="مثال: الخرطوم — أم درمان" maxlength="100">
-      <label class="v-label">البريد الإلكتروني (إن وُجد)</label>
-      <input id="rv-email" type="email" class="v-input" placeholder="اختياري">
       <hr class="v-sep">
-      <div class="v-alert">⚠️ بعد إرسال الطلب انتظر رسالة واتساب من الأدمن تحتوي على بيانات الدخول</div>
+      <label class="v-label">اسم المستخدم * (ستستخدمه عند الدخول)</label>
+      <input id="rv-uname" type="text" class="v-input" placeholder="بالإنجليزية بدون مسافات" maxlength="50" autocomplete="username">
+      <label class="v-label">كلمة المرور *</label>
+      <input id="rv-pw" type="password" class="v-input" placeholder="6 أحرف على الأقل" maxlength="64" autocomplete="new-password">
+      <hr class="v-sep">
+      <div class="v-alert">بعد إرسال الطلب، انتظر موافقة الأدمن عبر واتساب ثم سجّل دخولك بنفس البيانات</div>
       <button id="rv-btn" class="v-btn" onclick="regVolunteer()">إرسال الطلب</button>
       <button class="v-btn" style="background:#fff;color:var(--p);border:2px solid var(--p);margin-top:.5rem" onclick="showPage('landing')">رجوع</button>
     </div>
@@ -548,26 +551,35 @@ window.regVolunteer=async function(){
   const name=document.getElementById('rv-name').value.trim();
   const phone=document.getElementById('rv-phone').value.trim();
   const loc=document.getElementById('rv-loc').value.trim();
-  const email=document.getElementById('rv-email').value.trim();
+  const uname=document.getElementById('rv-uname').value.trim().replace(/\s/g,'_').toLowerCase();
+  const pw=document.getElementById('rv-pw').value;
 
   if(name.length<3)return toast('الاسم قصير جداً','error');
   if(!validPhone(phone))return toast('رقم الواتساب غير صحيح','error');
   if(!loc)return toast('أدخل الولاية/المدينة','error');
-  if(email&&!validEmail(email))return toast('البريد الإلكتروني غير صحيح','error');
+  if(!uname||uname.length<3)return toast('اسم المستخدم قصير جداً (3 أحرف على الأقل)','error');
+  if(!/^[a-z0-9_]+$/.test(uname))return toast('اسم المستخدم: أحرف إنجليزية وأرقام وشرطة سفلية فقط','error');
+  if(!pw||pw.length<6)return toast('كلمة المرور قصيرة (6 أحرف على الأقل)','error');
 
   loading('rv-btn',true);
   try{
-    const{error}=await sb.from('profiles').insert({
-      id:crypto.randomUUID(),
-      full_name:name,whatsapp_phone:phone,location:loc,
-      email:email||null,role:'field_volunteer',is_active:false
+    const genEmail=uname+'@shifaa-sudan.app';
+    const{data:auth,error:ae}=await sb.auth.signUp({email:genEmail,password:pw});
+    if(ae){
+      console.error(ae);
+      if(ae.message?.includes('already'))return toast('اسم المستخدم مستخدم مسبقاً، اختر آخر','error');
+      return toast('فشل إنشاء الحساب، حاول مرة أخرى','error');
+    }
+    if(!auth?.user)return toast('خطأ غير متوقع','error');
+    const{error:pe}=await sb.from('profiles').insert({
+      id:auth.user.id,full_name:name,whatsapp_phone:phone,
+      location:loc,email:genEmail,username:uname,
+      role:'field_volunteer',is_active:false
     });
-    if(error){console.error(error);return toast('فشل إرسال الطلب، حاول مرة أخرى','error');}
-    toast('تم إرسال طلبك! انتظر رسالة واتساب من الأدمن','success',7000);
-    document.getElementById('rv-name').value='';
-    document.getElementById('rv-phone').value='';
-    document.getElementById('rv-loc').value='';
-    document.getElementById('rv-email').value='';
+    if(pe){console.error(pe);return toast('فشل حفظ البيانات، حاول مرة أخرى','error');}
+    await sb.auth.signOut();
+    toast('تم إرسال طلبك! انتظر موافقة الأدمن ثم سجّل دخولك','success',7000);
+    ['rv-name','rv-phone','rv-loc','rv-uname','rv-pw'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     window.showPage('landing');
   }finally{loading('rv-btn',false);}
 };
@@ -659,11 +671,12 @@ function renderAdmin(root){
       <div><div class="dash-title">لوحة تحكم الأدمن</div><div class="dash-sub">${sc(ME.full_name)}</div></div>
     </div>
     <div class="tabs">
-      <div class="tab active" data-t="pending" onclick="aTab('pending')">طلبات التفعيل</div>
-      <div class="tab" data-t="doctors"  onclick="aTab('doctors')">الأطباء</div>
-      <div class="tab" data-t="vols"     onclick="aTab('vols')">المتطوعون</div>
-      <div class="tab" data-t="cases"    onclick="aTab('cases')">الحالات</div>
-      <div class="tab" data-t="stats"    onclick="aTab('stats')">الإحصاء الداخلي</div>
+      <div class="tab active" data-t="pending"  onclick="aTab('pending')">طلبات التفعيل</div>
+      <div class="tab" data-t="doctors"         onclick="aTab('doctors')">الأطباء</div>
+      <div class="tab" data-t="supervisors"     onclick="aTab('supervisors')">المشرفون</div>
+      <div class="tab" data-t="vols"            onclick="aTab('vols')">المتطوعون</div>
+      <div class="tab" data-t="cases"           onclick="aTab('cases')">الحالات</div>
+      <div class="tab" data-t="stats"           onclick="aTab('stats')">الإحصاء الداخلي</div>
     </div>
     <div id="a-content"></div>`;
   aTab('pending');
@@ -689,7 +702,7 @@ window.aTab=async function(t){
             ${p.certificate_url?`<a href="${SB_URL}/storage/v1/object/public/certificates/${sc(p.certificate_url)}" target="_blank" class="btn-link" style="font-size:.8rem">📄 عرض الشهادة</a>`:''}
           </div>
           <div class="flex-end">
-            <button class="btn btn-success btn-sm" onclick="aActivate('${sc(p.id)}','${sc(p.role)}','${sc(p.full_name)}','${sc((p.whatsapp_phone||p.phone||'').replace(/\D/g,''))}','${sc(p.email||'')}')">✓ تفعيل</button>
+            <button class="btn btn-success btn-sm" onclick="aActivate('${sc(p.id)}','${sc(p.role)}','${sc(p.full_name)}','${sc((p.whatsapp_phone||p.phone||'').replace(/\D/g,''))}')">✓ تفعيل</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--r);border-color:var(--r)" onclick="aReject('${sc(p.id)}')">✗ رفض</button>
           </div>
         </div>
@@ -710,9 +723,28 @@ window.aTab=async function(t){
             <div class="flex-end">
               ${d.doctor_level!=='consultant'?`<button class="btn btn-ghost btn-sm" onclick="aPromote('${sc(d.id)}','${sc(d.doctor_level)}','${sc(d.full_name)}')">↑ ترقية</button>`:''}
               <button class="btn btn-ghost btn-sm" style="color:var(--p2)" onclick="aAssignSupervisor('${sc(d.id)}','${sc(d.full_name)}')">تعيين مشرفاً</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--r);border-color:var(--r)" onclick="aDeleteUser('${sc(d.id)}','${sc(d.full_name)}')">حذف</button>
             </div>
           </div>
         </div>`).join('')}</div>`;
+  }
+
+  else if(t==='supervisors'){
+    const{data}=await sb.from('profiles').select('*').eq('role','medical_supervisor').eq('is_active',true).order('full_name');
+    if(!data?.length){c.innerHTML='<div class="alert alert-warn mt2">لا يوجد مشرفون مُعيَّنون حالياً</div>';return;}
+    c.innerHTML=`<div>${data.map(s=>`
+      <div class="case-card" style="border-right-color:var(--o)">
+        <div class="flex-between">
+          <div>
+            <div class="flex mb1"><strong>د. ${sc(s.full_name)}</strong><span class="badge b-orange">مشرف طبي</span></div>
+            <div class="small">${sc(s.specialty||'—')} | ${sc(s.location||'—')} | <a href="https://wa.me/${(s.whatsapp_phone||s.phone||'').replace(/\D/g,'')}" target="_blank" style="color:var(--g)">📱 واتساب</a></div>
+          </div>
+          <div class="flex-end">
+            <button class="btn btn-ghost btn-sm" onclick="aDemoteSupervisor('${sc(s.id)}','${sc(s.full_name)}')">إرجاع طبيباً</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--r);border-color:var(--r)" onclick="aDeleteUser('${sc(s.id)}','${sc(s.full_name)}')">حذف</button>
+          </div>
+        </div>
+      </div>`).join('')}</div>`;
   }
 
   else if(t==='vols'){
@@ -726,7 +758,9 @@ window.aTab=async function(t){
               <div class="flex mb1"><strong>${sc(v.full_name)}</strong>${v.username?`<span class="badge b-gray">@${sc(v.username)}</span>`:''}</div>
               <div class="small">${sc(v.location)} | <a href="https://wa.me/${(v.whatsapp_phone||v.phone||'').replace(/\D/g,'')}" target="_blank" style="color:var(--g)">📱 واتساب</a></div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="aSetUsername('${sc(v.id)}','${sc(v.full_name)}','${sc((v.whatsapp_phone||v.phone||'').replace(/\D/g,''))}')">تعيين اسم مستخدم</button>
+            <div class="flex-end">
+              <button class="btn btn-ghost btn-sm" style="color:var(--r);border-color:var(--r)" onclick="aDeleteUser('${sc(v.id)}','${sc(v.full_name)}')">حذف</button>
+            </div>
           </div>
         </div>`).join('')}</div>`;
   }
@@ -741,7 +775,10 @@ window.aTab=async function(t){
             <div class="small">${clip(cs.description,90)}…</div>
             <div class="small mt1">متطوع: ${sc(cs.vol?.full_name||'—')} | ${new Date(cs.created_at).toLocaleDateString('ar')}</div>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="adminOpenCase('${sc(cs.id)}')">عرض</button>
+          <div class="flex-end">
+            <button class="btn btn-ghost btn-sm" onclick="adminOpenCase('${sc(cs.id)}')">عرض</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--r);border-color:var(--r)" onclick="aDeleteCase('${sc(cs.id)}')">حذف</button>
+          </div>
         </div>
       </div>`).join('')}</div>`;
   }
@@ -774,63 +811,42 @@ window.aTab=async function(t){
   }
 };
 
-window.aActivate=async function(uid,role,name,waPhone,email){
-  if(role==='field_volunteer'){
-    const uname=prompt(`أدخل اسم المستخدم للمتطوع "${name}":`);
-    if(!uname?.trim())return;
-    const pw=prompt('أدخل كلمة المرور (ستُرسل عبر واتساب):');
-    if(!pw||pw.length<6){toast('كلمة المرور قصيرة (6 أحرف على الأقل)','error');return;}
-
-    let aAcc=null,aRef=null;
-    try{
-      const{data:sd}=await sb.auth.getSession();
-      if(!sd?.session){return toast('انتهت جلستك — أعد تسجيل الدخول','error');}
-      aAcc=sd.session.access_token;
-      aRef=sd.session.refresh_token;
-    }catch(e){console.error(e);return toast('خطأ في قراءة الجلسة','error');}
-
-    const genEmail=email||(uname.trim().replace(/\s/g,'_').toLowerCase()+'_'+Date.now()+'@shifaa-sudan.app');
-
-    try{
-      const{data:nAuth,error:se}=await sb.auth.signUp({email:genEmail,password:pw});
-      if(se||!nAuth?.user){
-        await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});
-        return toast('فشل إنشاء الحساب: '+(se?.message||'خطأ'),'error');
-      }
-      const newId=nAuth.user.id;
-      await sb.from('profiles').delete().eq('id',uid);
-      const{error:pi}=await sb.from('profiles').insert({
-        id:newId,full_name:name,whatsapp_phone:waPhone,
-        email:genEmail,role:'field_volunteer',is_active:true,username:uname.trim()
-      });
-      if(pi){console.error(pi);toast('تحذير: تم إنشاء الحساب لكن فشل حفظ الملف الشخصي','warn');}
-      await sb.auth.signOut();
-      const{error:re}=await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});
-      if(re){ME=null;toast('تم إنشاء حساب المتطوع. أعد تسجيل دخولك كأدمن.','warn',8000);window.showPage('login');return;}
-      const waMsg=`مرحباً ${name}!\nتم تفعيل حسابك في منصة شفاء السودان 🏥\n\nاسم المستخدم: ${uname.trim()}\nكلمة المرور: ${pw}\n\nللدخول: ${location.origin}`;
-      window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
-      toast('تم تفعيل حساب المتطوع وفتح واتساب','success');
-    }catch(e){
-      console.error(e);
-      try{await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});}catch(_){}
-      toast('حدث خطأ غير متوقع أثناء التفعيل','error');
-      return;
-    }
-  } else {
-    const{error}=await sb.from('profiles').update({is_active:true}).eq('id',uid);
-    if(error){console.error(error);return toast('فشل التفعيل','error');}
-    if(waPhone){
-      const waMsg=`مرحباً د. ${name}!\nتم تفعيل حسابك في منصة شفاء السودان 🏥\n\nيمكنك الآن تسجيل الدخول بالبريد الإلكتروني وكلمة المرور التي أنشأتها.\n\nرابط المنصة: ${location.origin}`;
-      window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
-    }
-    toast('تم تفعيل الحساب وإرسال إشعار واتساب','success');
+window.aActivate=async function(uid,role,name,waPhone){
+  const{error}=await sb.from('profiles').update({is_active:true}).eq('id',uid);
+  if(error){console.error(error);return toast('فشل التفعيل','error');}
+  if(waPhone){
+    const isVol=role==='field_volunteer';
+    const waMsg=isVol
+      ?`مرحباً ${name}!\nتم قبول طلبك في منصة شفاء السودان 🏥\n\nسجّل دخولك الآن باسم المستخدم وكلمة المرور التي اخترتها عند التسجيل.\n\nرابط المنصة: ${location.origin}`
+      :`مرحباً د. ${name}!\nتم تفعيل حسابك في منصة شفاء السودان 🏥\n\nسجّل دخولك الآن بالبريد الإلكتروني وكلمة المرور التي أنشأتها.\n\nرابط المنصة: ${location.origin}`;
+    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
   }
+  toast('تم التفعيل وإرسال إشعار واتساب','success');
   aTab('pending');
 };
 window.aReject=async function(uid){
   if(!confirm('تأكيد رفض وحذف الطلب؟'))return;
   await sb.from('profiles').delete().eq('id',uid);
   toast('تم رفض الطلب','warn');aTab('pending');
+};
+window.aDeleteUser=async function(uid,name){
+  if(!confirm(`حذف "${name}" نهائياً؟ سيُحذف حسابه وجميع بياناته.`))return;
+  const{error}=await sb.from('profiles').delete().eq('id',uid);
+  if(error){console.error(error);return toast('فشل الحذف','error');}
+  toast(`تم حذف ${name}`,'warn');
+  aTab(document.querySelector('.tab.active')?.dataset?.t||'doctors');
+};
+window.aDeleteCase=async function(cid){
+  if(!confirm('حذف هذه الحالة نهائياً؟ سيُحذف كامل سجلها الطبي.'))return;
+  const{error}=await sb.from('cases').delete().eq('id',cid);
+  if(error){console.error(error);return toast('فشل حذف الحالة','error');}
+  toast('تم حذف الحالة','warn');aTab('cases');
+};
+window.aDemoteSupervisor=async function(uid,name){
+  if(!confirm(`إرجاع د. ${name} إلى طبيب بدلاً من مشرف؟`))return;
+  const{error}=await sb.from('profiles').update({role:'doctor'}).eq('id',uid);
+  if(error){console.error(error);return toast('فشل العملية','error');}
+  toast('تم الإرجاع إلى طبيب','success');aTab('supervisors');
 };
 window.aPromote=async function(uid,lv,name){
   const next=lv==='general'?'specialist':'consultant';
