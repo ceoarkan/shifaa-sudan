@@ -586,7 +586,12 @@ window.doLogin=async function(){
       email=p.email;
     }
     const{data,error}=await sb.auth.signInWithPassword({email,password:pw});
-    if(error){console.error(error);return toast('بيانات الدخول غير صحيحة','error');}
+    if(error){
+      console.error(error);
+      if(error.message?.toLowerCase().includes('email not confirmed'))
+        return toast('البريد الإلكتروني غير مؤكَّد — تواصل مع الأدمن لتفعيل حسابك','warn',8000);
+      return toast('بيانات الدخول غير صحيحة','error');
+    }
 
     const{data:profile,error:pe}=await sb.from('profiles').select('*').eq('id',data.user.id).single();
     if(pe||!profile){await sb.auth.signOut();return toast('لم يُعثر على الملف الشخصي','error');}
@@ -776,29 +781,49 @@ window.aActivate=async function(uid,role,name,waPhone,email){
     const pw=prompt('أدخل كلمة المرور (ستُرسل عبر واتساب):');
     if(!pw||pw.length<6){toast('كلمة المرور قصيرة (6 أحرف على الأقل)','error');return;}
 
-    const{data:{session:adm}}=await sb.auth.getSession();
-    const aAcc=adm.access_token,aRef=adm.refresh_token;
+    let aAcc=null,aRef=null;
+    try{
+      const{data:sd}=await sb.auth.getSession();
+      if(!sd?.session){return toast('انتهت جلستك — أعد تسجيل الدخول','error');}
+      aAcc=sd.session.access_token;
+      aRef=sd.session.refresh_token;
+    }catch(e){console.error(e);return toast('خطأ في قراءة الجلسة','error');}
 
     const genEmail=email||(uname.trim().replace(/\s/g,'_').toLowerCase()+'_'+Date.now()+'@shifaa-sudan.app');
 
-    const{data:nAuth,error:se}=await sb.auth.signUp({email:genEmail,password:pw});
-    if(se||!nAuth?.user){
-      await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});
-      return toast('فشل إنشاء الحساب: '+(se?.message||'خطأ'),'error');
+    try{
+      const{data:nAuth,error:se}=await sb.auth.signUp({email:genEmail,password:pw});
+      if(se||!nAuth?.user){
+        await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});
+        return toast('فشل إنشاء الحساب: '+(se?.message||'خطأ'),'error');
+      }
+      const newId=nAuth.user.id;
+      await sb.from('profiles').delete().eq('id',uid);
+      const{error:pi}=await sb.from('profiles').insert({
+        id:newId,full_name:name,whatsapp_phone:waPhone,
+        email:genEmail,role:'field_volunteer',is_active:true,username:uname.trim()
+      });
+      if(pi){console.error(pi);toast('تحذير: تم إنشاء الحساب لكن فشل حفظ الملف الشخصي','warn');}
+      await sb.auth.signOut();
+      const{error:re}=await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});
+      if(re){ME=null;toast('تم إنشاء حساب المتطوع. أعد تسجيل دخولك كأدمن.','warn',8000);window.showPage('login');return;}
+      const waMsg=`مرحباً ${name}!\nتم تفعيل حسابك في منصة شفاء السودان 🏥\n\nاسم المستخدم: ${uname.trim()}\nكلمة المرور: ${pw}\n\nللدخول: ${location.origin}`;
+      window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
+      toast('تم تفعيل حساب المتطوع وفتح واتساب','success');
+    }catch(e){
+      console.error(e);
+      try{await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});}catch(_){}
+      toast('حدث خطأ غير متوقع أثناء التفعيل','error');
+      return;
     }
-    const newId=nAuth.user.id;
-    await sb.from('profiles').delete().eq('id',uid);
-    await sb.from('profiles').insert({id:newId,full_name:name,whatsapp_phone:waPhone,email:genEmail,role:'field_volunteer',is_active:true,username:uname.trim()});
-    await sb.auth.signOut();
-    const{error:re}=await sb.auth.setSession({access_token:aAcc,refresh_token:aRef});
-    if(re){ME=null;toast('تم إنشاء حساب المتطوع. أعد تسجيل دخولك كأدمن.','warn',8000);window.showPage('login');return;}
-    const waMsg=`مرحباً ${name}!\nتم تفعيل حسابك في منصة شفاء السودان 🏥\n\nاسم المستخدم: ${uname.trim()}\nكلمة المرور: ${pw}\n\nللدخول: ${location.origin}`;
-    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
-    toast('تم تفعيل حساب المتطوع وفتح واتساب','success');
   } else {
     const{error}=await sb.from('profiles').update({is_active:true}).eq('id',uid);
-    if(error)return toast('فشل التفعيل','error');
-    toast('تم تفعيل الحساب بنجاح','success');
+    if(error){console.error(error);return toast('فشل التفعيل','error');}
+    if(waPhone){
+      const waMsg=`مرحباً د. ${name}!\nتم تفعيل حسابك في منصة شفاء السودان 🏥\n\nيمكنك الآن تسجيل الدخول بالبريد الإلكتروني وكلمة المرور التي أنشأتها.\n\nرابط المنصة: ${location.origin}`;
+      window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMsg)}`,'_blank');
+    }
+    toast('تم تفعيل الحساب وإرسال إشعار واتساب','success');
   }
   aTab('pending');
 };
